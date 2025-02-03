@@ -1,0 +1,25 @@
+openapi: 3.0.0
+info:
+  title: Plataforma Colaborativa API
+  description: API para a plataforma colaborativa, permitindo que usuários criem posts, comentem e votem.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Servidor local para desenvolvimento
+
+paths:
+  /test:
+    get:
+      summary: Teste da API
+      description: Retorna uma mensagem de sucesso para verificar se a API está funcionando.
+      responses:
+        '200':
+          description: API funcionando com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API funcionando!
