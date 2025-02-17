@@ -4,7 +4,7 @@ info:
   description: API para a plataforma colaborativa, permitindo que usuários criem posts, comentem e votem.
   version: 1.0.0
 servers:
-  - url: http://localhost:5000
+  - url: http://localhost:3000
     description: Servidor local para desenvolvimento
 
 paths:
@@ -23,3 +23,57 @@ paths:
                   message:
                     type: string
                     example: API funcionando!
+
+  /login:
+    post:
+      summary: Login de usuário
+      description: Permite que o usuário faça login fornecendo email e senha.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "pedro@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "senha123"
+      responses:
+        '200':
+          description: Login bem-sucedido, retorna um token de autenticação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login bem-sucedido"
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3ODkwIiwiaWF0IjoxNjEyMzQ1NjA5fQ.q0_-RxUpmfVJ9FdqgqXht78T0V3XGvqfzFlN5WpXrbQ"
+        '401':
+          description: Credenciais inválidas ou usuário não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Usuário não encontrado"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erro interno do servidor"
