@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import authRouter from './auth';
+import postsRouter from './posts';
 
 const router = Router();
 
-// Monta as rotas de autenticação sem prefixo
 router.use(authRouter);
+router.use(postsRouter);
 
 export default router;

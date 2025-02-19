@@ -6,7 +6,12 @@ info:
 servers:
   - url: http://localhost:3000
     description: Servidor local para desenvolvimento
-
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 paths:
   /test:
     get:
@@ -23,7 +28,7 @@ paths:
                   message:
                     type: string
                     example: API funcionando!
-
+                    
   /login:
     post:
       summary: Login de usuário
@@ -56,7 +61,7 @@ paths:
                     example: "Login bem-sucedido"
                   token:
                     type: string
-                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3ODkwIiwiaWF0IjoxNjEyMzQ1NjA5fQ.q0_-RxUpmfVJ9FdqgqXht78T0V3XGvqfzFlN5WpXrbQ"
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         '401':
           description: Credenciais inválidas ou usuário não encontrado
           content:
@@ -67,6 +72,273 @@ paths:
                   message:
                     type: string
                     example: "Usuário não encontrado"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /register:
+    post:
+      summary: Registro de usuário
+      description: Registra um novo usuário na plataforma.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: "João da Silva"
+                email:
+                  type: string
+                  format: email
+                  example: "joao@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "senha123"
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Usuário criado com sucesso"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      createdAt:
+                        type: string
+                        format: date-time
+        '400':
+          description: Usuário já existe
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Usuário já existe"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /posts:
+    post:
+      summary: Criação de post
+      description: Permite que um usuário autenticado crie um novo post.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  type: string
+                  example: "Título do post"
+                content:
+                  type: string
+                  example: "Conteúdo do post"
+      responses:
+        '201':
+          description: Post criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post criado com sucesso"
+                  post:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      title:
+                        type: string
+                      content:
+                        type: string
+                      authorId:
+                        type: integer
+                      createdAt:
+                        type: string
+                        format: date-time
+        '400':
+          description: Título ou conteúdo ausente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Título e conteúdo são obrigatórios"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /posts/{postId}/vote:
+    post:
+      summary: Votação em post
+      description: Permite que um usuário autenticado vote em um post (upvote ou downvote). Se o mesmo voto for enviado novamente, o voto será removido; se for diferente, o voto é atualizado.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: integer
+          required: true
+          description: ID do post a ser votado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - voteType
+              properties:
+                voteType:
+                  type: string
+                  enum: [upvote, downvote]
+                  example: "upvote"
+      responses:
+        '200':
+          description: Voto registrado/atualizado/removido com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Voto registrado"
+        '400':
+          description: voteType inválido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "voteType inválido"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erro interno do servidor"
+
+  /posts/{postId}/comments:
+    post:
+      summary: Criação de comentário
+      description: Permite que um usuário autenticado adicione um comentário a um post.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: integer
+          required: true
+          description: ID do post a ser comentado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  example: "Este é um comentário."
+      responses:
+        '201':
+          description: Comentário criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Comentário criado com sucesso"
+                  comment:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      postId:
+                        type: integer
+                      authorId:
+                        type: integer
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                        format: date-time
+        '400':
+          description: Conteúdo do comentário ausente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Conteúdo do comentário é obrigatório"
         '500':
           description: Erro interno do servidor
           content:
