@@ -1,27 +1,24 @@
-import { Request, Response, RequestHandler } from 'express';
-import { pool } from '../config/db';
+import { Request, Response } from 'express';
+import { CommentService } from '../services/commentService';
 
-export const createComment: RequestHandler = async (req, res) => {
-  const { content } = req.body;
-  const postId = req.params.postId;
-  const userId = (req as any).userId;
+export class CommentController {
+  private commentService: CommentService;
 
-  if (!content) {
-    res.status(400).json({ message: 'Conteúdo do comentário é obrigatório' });
-    return;
+  constructor() {
+    this.commentService = new CommentService();
   }
 
-  try {
-    const result = await pool.query(
-      'INSERT INTO "Comment" ("postId", "authorId", content, "createdAt") VALUES ($1, $2, $3, NOW()) RETURNING *',
-      [postId, userId, content]
-    );
-    const comment = result.rows[0];
-    res.status(201).json({ message: 'Comentário criado com sucesso', comment });
-    return;
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-    return;
-  }
-};
+  createComment = async (req: Request, res: Response) => {
+    try {
+      const { content } = req.body;
+      const postId = req.params.postId;
+      const userId = (req as any).userId;
+
+      const comment = await this.commentService.createComment(postId, userId, content);
+      res.status(201).json({ message: 'Comentário criado com sucesso', comment });
+    } catch (error: any) {
+      console.error(error);
+      res.status(400).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
+}
