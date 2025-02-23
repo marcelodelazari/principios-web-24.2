@@ -349,3 +349,116 @@ paths:
                   message:
                     type: string
                     example: "Erro interno do servidor"
+
+  /posts/{postId}/comments/{commentId}:
+    put:
+      summary: Atualizar comentário
+      description: Permite que um usuário autenticado atualize um comentário em um post.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: integer
+          required: true
+          description: ID do post
+        - in: path
+          name: commentId
+          schema:
+            type: integer
+          required: true
+          description: ID do comentário a ser atualizado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  example: "Comentário atualizado"
+      responses:
+        '200':
+          description: Comentário atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Comentário atualizado"
+        '400':
+          description: Conteúdo do comentário ausente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Conteúdo do comentário é obrigatório"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erro interno do servidor"
+
+    delete:
+      summary: Deletar comentário
+      description: Permite que um usuário autenticado delete um comentário em um post.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: integer
+          required: true
+          description: ID do post
+        - in: path
+          name: commentId
+          schema:
+            type: integer
+          required: true
+          description: ID do comentário a ser deletado
+      responses:
+        '200':
+          description: Comentário deletado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Comentário deletado com sucesso"
+        '400':
+          description: Comentário não encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Comentário não encontrado"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erro interno do servidor"
