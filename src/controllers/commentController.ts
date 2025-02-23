@@ -15,7 +15,7 @@ export class CommentController {
       const userId = (req as any).userId;
 
       const comment = await this.commentService.createComment(postId, userId, content);
-      res.status(201).json({ message: 'Comentário criado com sucesso', comment });
+      res.status(201).json({ message: 'O comentário foi criado com sucesso', comment });
     } catch (error: any) {
       console.error(error);
       res.status(400).json({ message: error.message || 'Erro interno do servidor' });
@@ -56,5 +56,4 @@ export class CommentController {
       res.status(400).json({ message: error.message || 'Erro interno do servidor' });
     }
   };
-  
 }
