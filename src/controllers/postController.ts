@@ -1,73 +1,93 @@
-import { Request, Response, RequestHandler } from 'express';
-import { pool } from '../config/db';
+import { Request, Response } from 'express';
+import { PostService } from '../services/postService';
 
-export const createPost: RequestHandler = async (req, res) => {
-  const { title, content } = req.body;
-  const userId = (req as any).userId;
+export class PostController {
+  private postService: PostService;
 
-  if (!title || !content) {
-    res.status(400).json({ message: 'Título e conteúdo são obrigatórios' });
-    return;
+  constructor() {
+    this.postService = new PostService();
   }
 
-  try {
-    const result = await pool.query(
-      'INSERT INTO "Post" (title, content, "authorId", "createdAt") VALUES ($1, $2, $3, NOW()) RETURNING *',
-      [title, content, userId]
-    );
-    const post = result.rows[0];
-    res.status(201).json({ message: 'Post criado com sucesso', post });
-    return;
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-    return;
-  }
-};
+  // Método para criar post
+  createPost = async (req: Request, res: Response) => {
+    try {
+      const { title, content } = req.body;
+      const authorId = (req as any).userId;
 
-export const votePost: RequestHandler = async (req, res) => {
-  const { voteType } = req.body;
-  const userId = (req as any).userId;
-  const postId = req.params.postId;
+      const post = await this.postService.createPost(title, content, authorId);
+      res.status(201).json({ message: 'Post criado com sucesso', post });
+    } catch (error: any) {
+      console.error(error);
+      res.status(400).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
 
-  if (!voteType || !['upvote', 'downvote'].includes(voteType)) {
-    res.status(400).json({ message: 'voteType inválido' });
-    return;
-  }
+  // Método para listar todos os posts
+  getPosts = async (req: Request, res: Response) => {
+    try {
+      const posts = await this.postService.getPosts();
+      res.status(200).json(posts);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
 
-  try {
-    const existingVote = await pool.query(
-      'SELECT * FROM "PostVote" WHERE "postId" = $1 AND "userId" = $2',
-      [postId, userId]
-    );
+  // Método para obter post por ID
+  getPostById = async (req: Request, res: Response) => {
+    try {
+      const postId = req.params.postId;
+      const post = await this.postService.getPostById(postId);
+      res.status(200).json(post);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
 
-    if (existingVote.rows.length > 0) {
-      if (existingVote.rows[0].voteType === voteType) {
-        await pool.query(
-          'DELETE FROM "PostVote" WHERE "postId" = $1 AND "userId" = $2',
-          [postId, userId]
-        );
-        res.json({ message: 'Voto removido' });
-        return;
-      } else {
-        await pool.query(
-          'UPDATE "PostVote" SET "voteType" = $1, "createdAt" = NOW() WHERE "postId" = $2 AND "userId" = $3',
-          [voteType, postId, userId]
-        );
-        res.json({ message: 'Voto atualizado' });
+  // Método para atualizar post
+  updatePost = async (req: Request, res: Response) => {
+    try {
+      const { title, content } = req.body;
+      const postId = req.params.postId;
+      const authorId = (req as any).userId;
+
+      const updatedPost = await this.postService.updatePost(postId, authorId, title, content);
+      res.status(200).json({ message: 'Post atualizado com sucesso', updatedPost });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
+
+  // Método para deletar post
+  deletePost = async (req: Request, res: Response) => {
+    try {
+      const postId = req.params.postId;
+      const authorId = (req as any).userId;
+
+      const result = await this.postService.deletePost(postId, authorId);
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
+
+  // Método para votar em post
+  votePost = async (req: Request, res: Response) => {
+    try {
+      const { voteType } = req.body;
+      const userId = (req as any).userId;
+      const postId = req.params.postId;
+
+      if (!voteType || !['upvote', 'downvote'].includes(voteType)) {
+        res.status(400).json({ message: 'Tipo de voto inválido' });
         return;
       }
-    } else {
-      await pool.query(
-        'INSERT INTO "PostVote" ("postId", "userId", "voteType", "createdAt") VALUES ($1, $2, $3, NOW())',
-        [postId, userId, voteType]
-      );
-      res.json({ message: 'Voto registrado' });
-      return;
+
+      // Chama o serviço para registrar o voto
+      const result = await this.postService.votePost(postId, userId, voteType);
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ message: error.message || 'Erro interno do servidor' });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-    return;
-  }
-};
+  };
+}
