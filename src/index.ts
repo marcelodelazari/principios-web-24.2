@@ -36,7 +36,5 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Servidor rodando');
 });
 
-// Inicializa o servidor
-app.listen(port, () => {
-  console.log(`🚀 Servidor rodando na porta ${port}`);
-});
+// Exporte o app para o Vercel saber como utilizar
+export default app;
