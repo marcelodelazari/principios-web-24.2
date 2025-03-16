@@ -3,8 +3,21 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from '../config/db';
 
-export const login: RequestHandler = async (req, res) => {
+export const login: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
+
+  // Validação do email
+  if (!email || !email.includes('@') || !/^[\w-.]+@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
+    res.status(400).json({ message: 'Email inválido. Deve conter "@" e estar no formato correto.' });
+    return;
+  }
+
+  // Validação da senha
+  if (!password || password.length < 6) {
+    res.status(400).json({ message: 'A senha deve ter pelo menos 6 caracteres' });
+    return;
+  }
+
   try {
     const result = await pool.query('SELECT * FROM "User" WHERE "email" = $1', [email]);
     if (result.rows.length === 0) {
@@ -26,16 +39,33 @@ export const login: RequestHandler = async (req, res) => {
     );
 
     res.json({ message: 'Login bem-sucedido', token });
-    return;
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erro interno do servidor' });
-    return;
   }
 };
 
-export const register: RequestHandler = async (req, res) => {
+export const register: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   const { name, email, password } = req.body;
+
+  // Validação do nome
+  if (!name || name.length < 3 || name.length > 30) {
+    res.status(400).json({ message: 'O nome deve ter entre 3 e 30 caracteres' });
+    return;
+  }
+
+  // Validação do email
+  if (!email || !email.includes('@') || !/^[\w-.]+@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
+    res.status(400).json({ message: 'Email inválido. Deve conter "@" e estar no formato correto.' });
+    return;
+  }
+
+  // Validação da senha
+  if (!password || password.length < 6) {
+    res.status(400).json({ message: 'A senha deve ter pelo menos 6 caracteres' });
+    return;
+  }
+
   try {
     // Verifica se o usuário já existe
     const userCheck = await pool.query('SELECT * FROM "User" WHERE "email" = $1', [email]);
@@ -56,10 +86,8 @@ export const register: RequestHandler = async (req, res) => {
     const newUser = result.rows[0];
 
     res.status(201).json({ message: 'Usuário criado com sucesso', user: newUser });
-    return;
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erro interno do servidor' });
-    return;
   }
 };
