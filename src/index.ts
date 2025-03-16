@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { json } from "body-parser";
 import router from "./routes";
@@ -36,6 +36,14 @@ app.get("/test", (req: Request, res: Response) => {
 // Rota de verificação básica
 app.get("/", (req: Request, res: Response) => {
   res.send("Servidor rodando");
+});
+
+// Manipulador de erro global
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error(err);
+  res.status(err.status || 500).json({
+    message: err.message || "Erro interno do servidor",
+  });
 });
 
 // Inicia o servidor somente se não estiver no ambiente de teste
