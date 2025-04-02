@@ -7,6 +7,7 @@ import * as fs from "fs";
 import * as yaml from "js-yaml";
 import path from "path";
 
+console.log("=== SERVIDOR INICIANDO ===");
 const app = express();
 const port = process.env.PORT || 3000;
 

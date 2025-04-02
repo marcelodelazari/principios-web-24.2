@@ -1,29 +1,37 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  AppBar,
+  Toolbar,
   Container,
   Button,
-  Card,
-  CardContent,
   Typography,
   Box,
+  Stack,
+  Divider,
+  useTheme,
 } from "@mui/material";
 import { getPosts } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import VoteButtons from "../components/VoteButtons";
 
 interface Post {
   id: string;
   title: string;
   content: string;
-  authorId: string;
-  authorName: string;
+  author: { name: string };
   createdAt: string;
+  votes: Array<{ voteType: "upvote" | "downvote" }>; // Garantir que isso vem do backend
+  score: number;
+  commentsCount: number;
+  userVote?: "upvote" | "downvote" | null;
 }
 
 export default function Dashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -40,102 +48,220 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <Container>
-      <Box
+    <>
+      <AppBar
+        position="static"
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "1rem",
-          marginBottom: "2rem",
-          gap: 2,
-          flexWrap: "wrap",
+          backgroundColor: "#2d2d2d",
+          color: "#fff",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          mb: 4,
         }}
       >
-        <Typography variant="h6" component="h2">
-          {user ? `Bem-vindo, ${user.name}` : "Bem-vindo, Visitante"}
-        </Typography>
-
-        <Box sx={{ display: "flex", gap: 2 }}>
-          {user && (
-            <Button
-              component={Link}
-              to="/create-post"
-              variant="contained"
-              color="success"
-            >
-              Criar Post
-            </Button>
-          )}
-
-          {user ? (
-            <Button onClick={logout} variant="contained" color="secondary">
-              Sair
-            </Button>
-          ) : (
-            <Button
-              component={Link}
-              to="/login"
-              variant="contained"
-              color="primary"
-            >
-              Login
-            </Button>
-          )}
-        </Box>
-      </Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Últimos Posts
-      </Typography>
-      {loading ? (
-        <Typography>Carregando posts...</Typography>
-      ) : posts.length === 0 ? (
-        <Typography>Nenhum post encontrado</Typography>
-      ) : (
-        posts.map((post) => (
-          <Card
-            component={Link}
-            to={`/posts/${post.id}`}
-            key={post.id}
+        <Toolbar
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            py: 1,
+          }}
+        >
+          <Typography
+            variant="h6"
+            component="div"
             sx={{
-              marginBottom: "1.5rem",
-              transition: "transform 0.2s",
-              "&:hover": {
-                transform: "scale(1.01)",
-                boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
-              },
+              fontWeight: 700,
+              letterSpacing: "-0.5px",
             }}
           >
-            <CardContent>
-              <Typography variant="h5" component="h3" gutterBottom>
-                {post.title}
-              </Typography>
-              <Typography
-                variant="body1"
-                paragraph
+            MeuFórum
+          </Typography>
+
+          <Stack direction="row" spacing={2}>
+            {user && (
+              <Button
+                component={Link}
+                to="/create-post"
+                variant="contained"
                 sx={{
-                  whiteSpace: "pre-line",
-                  lineHeight: "1.6",
+                  textTransform: "none",
+                  bgcolor: "#404040",
+                  "&:hover": { bgcolor: "#505050" },
                 }}
               >
-                {post.content}
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
+                Novo Post
+              </Button>
+            )}
+            {user ? (
+              <Button
+                onClick={logout}
+                variant="outlined"
                 sx={{
-                  display: "block",
-                  marginTop: "1rem",
-                  fontStyle: "italic",
+                  textTransform: "none",
+                  color: "#fff",
+                  borderColor: "#666",
+                  "&:hover": { borderColor: "#888" },
                 }}
               >
-                Postado por {post.authorName} em{" "}
-                {new Date(post.createdAt).toLocaleDateString("pt-BR")}
-              </Typography>
-            </CardContent>
-          </Card>
-        ))
-      )}
-    </Container>
+                Sair
+              </Button>
+            ) : (
+              <Stack direction="row" spacing={2}>
+                <Button
+                  component={Link}
+                  to="/login"
+                  variant="contained"
+                  sx={{
+                    textTransform: "none",
+                    bgcolor: "#404040",
+                    "&:hover": { bgcolor: "#505050" },
+                  }}
+                >
+                  Entrar
+                </Button>
+                <Button
+                  component={Link}
+                  to="/register"
+                  variant="outlined"
+                  sx={{
+                    textTransform: "none",
+                    color: "#fff",
+                    borderColor: "#666",
+                    "&:hover": {
+                      borderColor: "#888",
+                      backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    },
+                  }}
+                >
+                  Criar Conta
+                </Button>
+              </Stack>
+            )}
+          </Stack>
+        </Toolbar>
+      </AppBar>
+
+      {/* Restante do código permanece igual */}
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Typography variant="h5" fontWeight="600" mb={3}>
+          {user ? `Olá, ${user.name}` : "Bem-vindo ao Fórum"}
+        </Typography>
+
+        <Typography variant="h6" fontWeight="700" mb={2}>
+          Discussões Recentes
+        </Typography>
+
+        {loading ? (
+          <Typography>Carregando posts...</Typography>
+        ) : posts.length === 0 ? (
+          <Typography>Nenhum post encontrado</Typography>
+        ) : (
+          posts.map((post, index) => (
+            <Box key={post.id} sx={{ mb: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                {/* Área de votação isolada */}
+                <Box
+                  sx={{
+                    mr: 2,
+                    minWidth: 80,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <div onClick={(e) => e.preventDefault()}>
+                    <VoteButtons
+                      postId={post.id}
+                      initialScore={post.score}
+                      initialVote={post.userVote}
+                    />
+                  </div>
+                </Box>
+
+                {/* Conteúdo clicável */}
+                <Box
+                  component={Link}
+                  to={`/posts/${post.id}`}
+                  sx={{
+                    flex: 1,
+                    textDecoration: "none",
+                    color: "inherit",
+                    py: 2,
+                    "&:hover": {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                  }}
+                >
+                  <Typography
+                    variant="h5"
+                    fontWeight="700"
+                    sx={{
+                      fontSize: "1.5rem",
+                      mb: 1,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {post.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: theme.palette.text.secondary,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      mb: 1.5,
+                    }}
+                  >
+                    {post.content}
+                  </Typography>
+
+                  {/* Metadados */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 1.5,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{ color: theme.palette.text.secondary }}
+                    >
+                      Postado por {post.author?.name}
+                    </Typography>
+                    <Typography variant="caption">•</Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: theme.palette.text.secondary }}
+                    >
+                      {new Date(post.createdAt).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </Typography>
+                    <Typography variant="caption">•</Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {post.commentsCount} comentários
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {index < posts.length - 1 && <Divider sx={{ mt: 2 }} />}
+            </Box>
+          ))
+        )}
+      </Container>
+    </>
   );
 }

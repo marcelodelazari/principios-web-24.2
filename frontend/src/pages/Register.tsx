@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from "../services/api";
+import { registerUser } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import {
   TextField,
@@ -12,7 +12,8 @@ import {
   Stack,
 } from "@mui/material";
 
-export default function Login() {
+export default function Register() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,13 +24,20 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await loginUser(email, password);
+      const response = await registerUser({ name, email, password });
 
-      if (response && response.token && response.user) {
-        login(response.token, response.user);
-        setTimeout(() => {
-          navigate("/");
-        }, 100);
+      if (response && response.user) {
+        // Alterado aqui
+        // Se o backend não retornar token, redirecione para login
+        navigate("/login");
+
+        // Se quiser login automático, descomente isso:
+        // if (response.token) {
+        //   login(response.token, response.user);
+        //   navigate("/");
+        // } else {
+        //   navigate("/login");
+        // }
       } else {
         setError("Resposta inválida do servidor");
       }
@@ -63,10 +71,26 @@ export default function Login() {
             mb: 4,
           }}
         >
-          Login
+          Criar Conta
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+          <TextField
+            fullWidth
+            label="Nome completo"
+            variant="outlined"
+            margin="normal"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "#666" },
+                "&:hover fieldset": { borderColor: "#888" },
+                "&.Mui-focused fieldset": { borderColor: "#404040" },
+              },
+            }}
+          />
+
           <TextField
             fullWidth
             label="Digite seu email"
@@ -85,7 +109,7 @@ export default function Login() {
 
           <TextField
             fullWidth
-            label="Digite sua senha"
+            label="Crie uma senha"
             type="password"
             variant="outlined"
             margin="normal"
@@ -128,7 +152,7 @@ export default function Login() {
               "&:hover": { backgroundColor: "#505050" },
             }}
           >
-            Entrar
+            Registrar
           </Button>
 
           <Button
@@ -157,11 +181,11 @@ export default function Login() {
             alignItems="center"
           >
             <Typography variant="body2" color="textSecondary">
-              Novo por aqui?
+              Já tem uma conta?
             </Typography>
             <Button
               component={Link}
-              to="/register"
+              to="/login"
               variant="text"
               sx={{
                 textTransform: "none",
@@ -172,7 +196,7 @@ export default function Login() {
                 "&:hover": { backgroundColor: "transparent" },
               }}
             >
-              Crie sua conta
+              Faça login
             </Button>
           </Stack>
         </Box>

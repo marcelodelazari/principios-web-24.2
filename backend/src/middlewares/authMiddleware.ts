@@ -10,21 +10,49 @@ export const authenticateJWT = (
   next: NextFunction
 ): void => {
   const authHeader = req.headers.authorization;
+  console.log("[AUTH] Headers:", req.headers); // Log 1
 
   if (authHeader) {
     const token = authHeader.split(" ")[1];
+    console.log("[AUTH] Token:", token); // Log 2
+
     jwt.verify(
       token,
       process.env.JWT_SECRET || "secret",
       (err, decoded: any) => {
+        console.log("[AUTH] Decoded Token:", decoded); // Log 3
+
         if (err) {
+          console.error("[AUTH] Token verification error:", err); // Log 4
           return next(new Error("Token inválido"));
         }
-        req.userId = decoded.userId;
+
+        console.log(
+          "[AUTH] UserID from token:",
+          decoded?.userId,
+          "Type:",
+          typeof decoded?.userId
+        ); // Log 5
+
+        if (!decoded?.userId) {
+          console.error("[AUTH] No userId in token"); // Log 6
+          return next(new Error("Token inválido"));
+        }
+
+        // Conversão explícita para número
+        req.userId = Number(decoded.userId);
+        console.log(
+          "[AUTH] Processed UserID:",
+          req.userId,
+          "Type:",
+          typeof req.userId
+        ); // Log 7
+
         next();
       }
     );
   } else {
+    console.error("[AUTH] No authorization header"); // Log 8
     return next(new Error("Token não fornecido"));
   }
 };
@@ -47,11 +75,9 @@ export const validateRegister = async (
 
   // Validação do email
   if (!email || !/^[\w-.]+@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
-    res
-      .status(400)
-      .json({
-        message: 'Email inválido. Deve conter "@" e estar no formato correto.',
-      });
+    res.status(400).json({
+      message: 'Email inválido. Deve conter "@" e estar no formato correto.',
+    });
     return;
   }
 
@@ -94,11 +120,9 @@ export const validateLogin = async (
     !email.includes("@") ||
     !/^[\w-.]+@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)
   ) {
-    res
-      .status(400)
-      .json({
-        message: 'Email inválido. Deve conter "@" e estar no formato correto.',
-      });
+    res.status(400).json({
+      message: 'Email inválido. Deve conter "@" e estar no formato correto.',
+    });
     return;
   }
 

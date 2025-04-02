@@ -11,13 +11,17 @@ import {
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
+import VoteButtons from "../components/VoteButtons";
 
 interface Post {
   id: string;
   title: string;
   content: string;
+  authorId: string;
   authorName: string;
   createdAt: string;
+  score: number;
+  userVote?: "upvote" | "downvote" | null;
 }
 
 interface Comment {
@@ -96,6 +100,11 @@ export default function PostDetails() {
 
       <Card sx={{ mb: 4 }}>
         <CardContent>
+          <VoteButtons
+            postId={post.id}
+            initialScore={post.score}
+            initialVote={post.userVote}
+          />
           <Typography variant="h4" gutterBottom>
             {post.title}
           </Typography>

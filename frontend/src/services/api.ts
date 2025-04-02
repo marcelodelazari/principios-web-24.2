@@ -16,7 +16,11 @@ api.interceptors.request.use((config) => {
 
 export const getPosts = async () => {
   const response = await api.get("/posts");
-  return response.data;
+  return response.data.map((post: any) => ({
+    ...post,
+    score: post.score || 0,
+    userVote: post.userVote || null,
+  }));
 };
 
 export const loginUser = async (email: string, password: string) => {
@@ -24,6 +28,14 @@ export const loginUser = async (email: string, password: string) => {
   return response.data;
 };
 
+export const registerUser = async (userData: {
+  name: string;
+  email: string;
+  password: string;
+}) => {
+  const response = await axios.post("/register", userData);
+  return response.data;
+};
 export const getCurrentUser = async () => {
   const response = await api.get("/users/me");
   return response.data;

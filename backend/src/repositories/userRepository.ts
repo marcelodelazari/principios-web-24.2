@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -11,7 +11,9 @@ export class UserRepository {
 
   async getUserById(userId: number) {
     return prisma.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
     });
   }
 

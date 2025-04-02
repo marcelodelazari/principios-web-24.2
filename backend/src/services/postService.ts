@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, VoteType } from "@prisma/client";
 import { PostRepository } from "../repositories/postRepository";
 
 const prisma = new PrismaClient();
@@ -19,17 +19,19 @@ export class PostService {
   }
 
   // Método para listar todos os posts
-  async getPosts() {
-    const posts = await this.postRepository.getPosts();
+  async getPosts(currentUserId?: number) {
+    const posts = await this.postRepository.getPosts(currentUserId);
 
-    // Mapeia os posts para incluir o authorName no formato correto
     return posts.map((post) => ({
+      ...post,
       id: post.id.toString(),
-      title: post.title,
-      content: post.content,
       authorId: post.authorId.toString(),
-      authorName: post.author.name, // Adiciona o nome do autor
-      createdAt: post.createdAt.toISOString(),
+      score: post.votes.reduce((acc, vote) => {
+        // Cálculo correto
+        return vote.voteType === "upvote" ? acc + 1 : acc - 1;
+      }, 0),
+      commentsCount: post._count.comments,
+      userVote: post.votes[0]?.voteType || null,
     }));
   }
 
@@ -53,51 +55,16 @@ export class PostService {
     return this.postRepository.deletePost(postId, authorId);
   }
 
-  // Método para votar em post
-  async votePost(postId: string, userId: string, voteType: string) {
-    const voteEnum = voteType === "upvote" ? "upvote" : "downvote";
-
-    const existingVote = await prisma.postVote.findUnique({
-      where: {
-        postId_userId: {
-          postId: parseInt(postId),
-          userId: parseInt(userId),
-        },
-      },
-    });
-
-    if (existingVote) {
-      if (existingVote.voteType === voteEnum) {
-        await prisma.postVote.delete({
-          where: {
-            postId_userId: {
-              postId: parseInt(postId),
-              userId: parseInt(userId),
-            },
-          },
-        });
-        return { message: "Voto removido" };
-      } else {
-        await prisma.postVote.update({
-          where: {
-            postId_userId: {
-              postId: parseInt(postId),
-              userId: parseInt(userId),
-            },
-          },
-          data: { voteType: voteEnum },
-        });
-        return { message: "Voto atualizado" };
-      }
-    } else {
-      await prisma.postVote.create({
-        data: {
-          postId: parseInt(postId),
-          userId: parseInt(userId),
-          voteType: voteEnum,
-        },
-      });
-      return { message: "Voto registrado" };
+  async votePost(postId: string, userId: string, voteType: string | null) {
+    // Validação
+    if (voteType && !["upvote", "downvote"].includes(voteType)) {
+      throw new Error("Tipo de voto inválido");
     }
+
+    return this.postRepository.handleVote(
+      parseInt(postId),
+      parseInt(userId),
+      voteType as VoteType | null
+    );
   }
 }

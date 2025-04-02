@@ -91,22 +91,21 @@ export class PostController {
   votePost = async (req: Request, res: Response) => {
     try {
       const { voteType } = req.body;
-      const userId = (req as any).userId;
+      const userId = (req as any).userId; // Do middleware JWT
       const postId = req.params.postId;
 
-      if (!voteType || !["upvote", "downvote"].includes(voteType)) {
-        res.status(400).json({ message: "Tipo de voto inválido" });
-        return;
-      }
-
-      // Chama o serviço para registrar o voto
       const result = await this.postService.votePost(postId, userId, voteType);
-      res.status(200).json(result);
+
+      res.status(200).json({
+        success: true,
+        newScore: result.newScore,
+        userVote: result.userVote,
+      });
     } catch (error: any) {
-      console.error(error);
-      res
-        .status(500)
-        .json({ message: error.message || "Erro interno do servidor" });
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
     }
   };
 }
