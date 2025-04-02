@@ -1,4 +1,4 @@
-import { CommentRepository } from '../repositories/commentRepository';
+import { CommentRepository } from "../repositories/commentRepository";
 
 export class CommentService {
   private commentRepository: CommentRepository;
@@ -9,7 +9,7 @@ export class CommentService {
 
   async createComment(postId: string, userId: string, content: string) {
     if (!content) {
-      throw new Error('Conteúdo do comentário é obrigatório');
+      throw new Error("Conteúdo do comentário é obrigatório");
     }
     return this.commentRepository.createComment(postId, userId, content);
   }
@@ -20,23 +20,30 @@ export class CommentService {
 
   async updateComment(commentId: string, userId: string, content: string) {
     if (!content) {
-      throw new Error('Conteúdo do comentário é obrigatório');
+      throw new Error("Conteúdo do comentário é obrigatório");
     }
 
-    const updatedComment = await this.commentRepository.updateComment(commentId, userId, content);
+    const updatedComment = await this.commentRepository.updateComment(
+      commentId,
+      userId,
+      content
+    );
     if (!updatedComment) {
-      throw new Error('Comentário não encontrado ou usuário não autorizado');
+      throw new Error("Comentário não encontrado ou usuário não autorizado");
     }
-    
+
     return updatedComment;
   }
 
   async deleteComment(commentId: string, userId: string) {
-    const deleted = await this.commentRepository.deleteComment(commentId, userId);
+    const deleted = await this.commentRepository.deleteComment(
+      commentId,
+      userId
+    );
     if (!deleted) {
-      throw new Error('Comentário não encontrado ou usuário não autorizado');
+      throw new Error("Comentário não encontrado ou usuário não autorizado");
     }
 
-    return { message: 'Comentário deletado com sucesso' };
+    return { message: "Comentário deletado com sucesso" };
   }
 }

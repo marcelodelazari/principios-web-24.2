@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { loginService, registerService } from '../services/authService';
+import { Request, Response } from "express";
+import { loginService, registerService } from "../services/authService";
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
@@ -10,7 +10,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (error instanceof Error) {
       res.status(500).json({ message: error.message });
     } else {
-      res.status(500).json({ message: 'Erro desconhecido' });
+      res.status(500).json({ message: "Erro desconhecido" });
     }
   }
 };
@@ -24,7 +24,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     if (error instanceof Error) {
       res.status(500).json({ message: error.message });
     } else {
-      res.status(500).json({ message: 'Erro desconhecido' });
+      res.status(500).json({ message: "Erro desconhecido" });
     }
   }
 };

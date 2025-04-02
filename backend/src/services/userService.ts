@@ -1,5 +1,5 @@
-import bcrypt from 'bcryptjs';
-import { UserRepository } from '../repositories/userRepository';
+import bcrypt from "bcryptjs";
+import { UserRepository } from "../repositories/userRepository";
 
 export class UserService {
   private userRepository: UserRepository;
@@ -11,7 +11,7 @@ export class UserService {
   async createUser(name: string, email: string, password: string) {
     const existingUser = await this.userRepository.getUserByEmail(email);
     if (existingUser) {
-      throw new Error('E-mail já cadastrado.');
+      throw new Error("E-mail já cadastrado.");
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -20,7 +20,7 @@ export class UserService {
 
   async getUserById(userId: number) {
     const user = await this.userRepository.getUserById(userId);
-    if (!user) throw new Error('Usuário não encontrado.');
+    if (!user) throw new Error("Usuário não encontrado.");
     return user;
   }
 

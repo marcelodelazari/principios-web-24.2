@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import { PostRepository } from '../repositories/postRepository';
+import { PrismaClient } from "@prisma/client";
+import { PostRepository } from "../repositories/postRepository";
 
 const prisma = new PrismaClient();
 
@@ -13,7 +13,7 @@ export class PostService {
   // Método para criar post
   async createPost(title: string, content: string, authorId: string) {
     if (!title || !content) {
-      throw new Error('Título e conteúdo são obrigatórios');
+      throw new Error("Título e conteúdo são obrigatórios");
     }
     return this.postRepository.createPost(title, content, authorId);
   }
@@ -29,7 +29,12 @@ export class PostService {
   }
 
   // Método para atualizar post
-  async updatePost(postId: string, authorId: string, title: string, content: string) {
+  async updatePost(
+    postId: string,
+    authorId: string,
+    title: string,
+    content: string
+  ) {
     return this.postRepository.updatePost(postId, authorId, title, content);
   }
 
@@ -40,7 +45,7 @@ export class PostService {
 
   // Método para votar em post
   async votePost(postId: string, userId: string, voteType: string) {
-    const voteEnum = voteType === 'upvote' ? 'upvote' : 'downvote';
+    const voteEnum = voteType === "upvote" ? "upvote" : "downvote";
 
     const existingVote = await prisma.postVote.findUnique({
       where: {
@@ -61,7 +66,7 @@ export class PostService {
             },
           },
         });
-        return { message: 'Voto removido' };
+        return { message: "Voto removido" };
       } else {
         await prisma.postVote.update({
           where: {
@@ -72,7 +77,7 @@ export class PostService {
           },
           data: { voteType: voteEnum },
         });
-        return { message: 'Voto atualizado' };
+        return { message: "Voto atualizado" };
       }
     } else {
       await prisma.postVote.create({
@@ -82,7 +87,7 @@ export class PostService {
           voteType: voteEnum,
         },
       });
-      return { message: 'Voto registrado' };
+      return { message: "Voto registrado" };
     }
   }
 }
