@@ -57,4 +57,14 @@ export class UserController {
         .json({ message: error.message || "Erro interno do servidor." });
     }
   };
+
+  getCurrentUser = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).userId;
+      const user = await this.userService.getUserById(userId);
+      res.status(200).json(user);
+    } catch (error: any) {
+      res.status(404).json({ message: error.message });
+    }
+  };
 }

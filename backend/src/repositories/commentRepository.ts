@@ -1,9 +1,16 @@
-import { pool } from '../config/db';
+import { pool } from "../config/db";
 
 export class CommentRepository {
   async createComment(postId: string, userId: string, content: string) {
     const result = await pool.query(
-      'INSERT INTO "Comment" ("postId", "authorId", content, "createdAt") VALUES ($1, $2, $3, NOW()) RETURNING *',
+      `INSERT INTO "Comment" ("postId", "authorId", content, "createdAt")
+       VALUES ($1, $2, $3, NOW())
+       RETURNING 
+         id,
+         content,
+         "createdAt",
+         "authorId",
+         (SELECT name FROM "User" WHERE id = $2) as "authorName"`, // Garanta todas as colunas
       [postId, userId, content]
     );
     return result.rows[0];
@@ -11,7 +18,11 @@ export class CommentRepository {
 
   async getCommentsByPost(postId: string) {
     const result = await pool.query(
-      'SELECT * FROM "Comment" WHERE "postId" = $1 ORDER BY "createdAt" DESC',
+      `SELECT c.*, u.name as "authorName" 
+       FROM "Comment" c
+       JOIN "User" u ON c."authorId" = u.id
+       WHERE c."postId" = $1 
+       ORDER BY c."createdAt" DESC`,
       [postId]
     );
     return result.rows;
@@ -31,9 +42,9 @@ export class CommentRepository {
       [commentId, userId]
     );
     if (result && result.rowCount !== null) {
-        return result.rowCount > 0;
-      } else {
-        return false;
-      }
+      return result.rowCount > 0;
+    } else {
+      return false;
+    }
   }
 }

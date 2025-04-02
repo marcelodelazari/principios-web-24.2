@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -17,8 +17,15 @@ export class PostRepository {
   // Método para listar todos os posts
   async getPosts() {
     return prisma.post.findMany({
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
+        },
+      },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
   }
@@ -33,7 +40,12 @@ export class PostRepository {
   }
 
   // Método para atualizar post
-  async updatePost(postId: string, authorId: string, title: string, content: string) {
+  async updatePost(
+    postId: string,
+    authorId: string,
+    title: string,
+    content: string
+  ) {
     return prisma.post.update({
       where: {
         id: parseInt(postId),

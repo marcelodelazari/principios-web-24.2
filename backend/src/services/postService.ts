@@ -20,7 +20,17 @@ export class PostService {
 
   // Método para listar todos os posts
   async getPosts() {
-    return this.postRepository.getPosts();
+    const posts = await this.postRepository.getPosts();
+
+    // Mapeia os posts para incluir o authorName no formato correto
+    return posts.map((post) => ({
+      id: post.id.toString(),
+      title: post.title,
+      content: post.content,
+      authorId: post.authorId.toString(),
+      authorName: post.author.name, // Adiciona o nome do autor
+      createdAt: post.createdAt.toISOString(),
+    }));
   }
 
   // Método para obter post por ID
