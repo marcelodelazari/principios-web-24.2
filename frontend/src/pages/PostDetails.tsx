@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, ReactElement } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Container,
@@ -8,10 +8,17 @@ import {
   TextField,
   Button,
   Box,
+  Divider,
+  Avatar,
+  Stack,
+  useTheme,
 } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
 import VoteButtons from "../components/VoteButtons";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Post {
   id: string;
@@ -32,13 +39,14 @@ interface Comment {
   authorName: string;
 }
 
-export default function PostDetails() {
+export default function PostDetails(): ReactElement {
   const { postId } = useParams();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,11 +82,10 @@ export default function PostDetails() {
         }
       );
 
-      // Ajuste para usar os dados completos da resposta
       const completeComment = {
         ...response.data,
         authorName: user.name,
-        content: newComment, // Garante o conteúdo imediato
+        content: newComment,
         createdAt: new Date().toISOString(),
       };
 
@@ -93,73 +100,169 @@ export default function PostDetails() {
   if (!post) return <Typography>Post não encontrado</Typography>;
 
   return (
-    <Container maxWidth="md">
-      <Button component={Link} to="/" sx={{ mb: 2 }}>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Button
+        component={Link}
+        to="/"
+        startIcon={<ArrowBackIcon />}
+        sx={{ mb: 3, color: "text.primary" }}
+      >
         Voltar para o Dashboard
       </Button>
 
-      <Card sx={{ mb: 4 }}>
+      {/* Post Principal */}
+      <Card sx={{ mb: 4, boxShadow: 3 }}>
         <CardContent>
-          <VoteButtons
-            postId={post.id}
-            initialScore={post.score}
-            initialVote={post.userVote}
-          />
-          <Typography variant="h4" gutterBottom>
-            {post.title}
-          </Typography>
-          <Typography variant="body1" paragraph>
-            {post.content}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Postado por {post.authorName} em{" "}
-            {new Date(post.createdAt).toLocaleDateString("pt-BR")}
-          </Typography>
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <VoteButtons
+              postId={post.id}
+              initialScore={post.score}
+              initialVote={post.userVote}
+            />
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography
+                variant="h4"
+                gutterBottom
+                sx={{ fontWeight: 600, mb: 2 }}
+              >
+                {post.title}
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  whiteSpace: "pre-line",
+                  lineHeight: 1.6,
+                  mb: 3,
+                  fontFamily: "inherit",
+                }}
+              >
+                {post.content}
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ color: "text.secondary", mt: 2 }}
+              >
+                <Avatar
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    fontSize: "0.8rem",
+                    bgcolor: theme.palette.primary.main,
+                  }}
+                >
+                  {post.authorName}
+                </Avatar>
+                <Typography variant="body2">
+                  Postado por {post.authorName}
+                </Typography>
+                <Divider orientation="vertical" flexItem />
+                <Typography variant="body2">
+                  {formatDistanceToNow(new Date(post.createdAt), {
+                    addSuffix: true,
+                    locale: ptBR,
+                  })}
+                </Typography>
+              </Stack>
+            </Box>
+          </Stack>
         </CardContent>
       </Card>
 
-      {user && (
-        <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 4 }}>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="Adicionar comentário"
-            variant="outlined"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <Button type="submit" variant="contained">
-            Comentar
-          </Button>
-        </Box>
-      )}
+      {/* Seção de Comentários */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+          Comentários ({comments.length})
+        </Typography>
 
-      <Typography variant="h6" gutterBottom>
-        Comentários ({comments.length})
-      </Typography>
+        {user && (
+          <Card sx={{ mb: 4, bgcolor: "background.paper" }}>
+            <CardContent>
+              <Box
+                component="form"
+                onSubmit={handleCommentSubmit}
+                sx={{ mb: 2 }}
+              >
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  maxRows={6}
+                  label="Escreva seu comentário"
+                  variant="outlined"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  sx={{ mb: 2 }}
+                  inputProps={{ maxLength: 500 }}
+                />
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    {newComment.length}/500 caracteres
+                  </Typography>
+                  <Button type="submit" variant="contained" size="medium">
+                    Publicar comentário
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        )}
 
-      {comments.map((comment) => (
-        <Card key={comment.id} sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography variant="body1" paragraph>
-              {comment.content || "Comentário carregando..."}{" "}
-              {/* Fallback seguro */}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Comentado por {comment.authorName || "Autor desconhecido"} em{" "}
-              {new Date(comment.createdAt).toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Typography>
-          </CardContent>
-        </Card>
-      ))}
+        {comments.map((comment) => (
+          <Card
+            key={comment.id}
+            sx={{
+              mb: 2,
+              boxShadow: 0,
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <CardContent>
+              <Typography
+                variant="body1"
+                sx={{ whiteSpace: "pre-line", lineHeight: 1.6, mb: 1.5 }}
+              >
+                {comment.content}
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ color: "text.secondary" }}
+              >
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    fontSize: "0.8rem",
+                    bgcolor: theme.palette.secondary.main,
+                  }}
+                >
+                  {comment.authorName}
+                </Avatar>
+                <Typography variant="caption">
+                  {comment.authorName}
+                </Typography>
+                <Divider orientation="vertical" flexItem />
+                <Typography variant="caption">
+                  {formatDistanceToNow(new Date(comment.createdAt), {
+                    addSuffix: true,
+                    locale: ptBR,
+                  })}
+                </Typography>
+              </Stack>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
     </Container>
   );
 }
