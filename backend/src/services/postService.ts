@@ -37,7 +37,20 @@ export class PostService {
 
   // Método para obter post por ID
   async getPostById(postId: string) {
-    return this.postRepository.getPostById(postId);
+    const post = await this.postRepository.getPostById(postId);
+
+    if (!post) return null;
+
+    return {
+      ...post,
+      id: post.id.toString(),
+      authorId: post.authorId.toString(),
+      score: post.votes.reduce((acc, vote) => {
+        return vote.voteType === "upvote" ? acc + 1 : acc - 1;
+      }, 0),
+      commentsCount: post._count.comments,
+      userVote: post.votes[0]?.voteType || null,
+    };
   }
 
   // Método para atualizar post

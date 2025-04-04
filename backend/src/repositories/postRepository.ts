@@ -16,19 +16,17 @@ export class PostRepository {
 
   // Método para listar todos os posts com score calculado
   async getPosts(currentUserId?: number) {
-    const posts = await prisma.post.findMany({
+    return prisma.post.findMany({
       include: {
         author: { select: { name: true } },
         votes: {
           where: currentUserId ? { userId: currentUserId } : undefined,
           select: { voteType: true },
         },
-        _count: { select: { comments: true } }, // Remover contagem de votes aqui
+        _count: { select: { comments: true } },
       },
       orderBy: { createdAt: "desc" },
     });
-
-    return posts;
   }
 
   // Método para calcular o score
@@ -39,10 +37,18 @@ export class PostRepository {
   }
 
   // Método para obter post por ID
-  async getPostById(postId: string) {
+  async getPostById(postId: string, currentUserId?: number) {
     return prisma.post.findUnique({
       where: {
         id: parseInt(postId),
+      },
+      include: {
+        author: { select: { name: true } },
+        votes: {
+          where: currentUserId ? { userId: currentUserId } : undefined,
+          select: { voteType: true },
+        },
+        _count: { select: { comments: true } },
       },
     });
   }
@@ -68,10 +74,14 @@ export class PostRepository {
 
   // Método para deletar post
   async deletePost(postId: string, authorId: string) {
-    return prisma.post.deleteMany({
+    return prisma.post.delete({
       where: {
         id: parseInt(postId),
         authorId: parseInt(authorId),
+      },
+      include: {
+        comments: true, // Força o cascade pelo Prisma
+        votes: true,
       },
     });
   }

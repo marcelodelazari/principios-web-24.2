@@ -10,8 +10,10 @@ import {
   Stack,
   Divider,
   useTheme,
+  IconButton,
 } from "@mui/material";
-import { getPosts } from "../services/api";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { getPosts, deletePost } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import VoteButtons from "../components/VoteButtons";
 
@@ -21,7 +23,7 @@ interface Post {
   content: string;
   author: { name: string };
   createdAt: string;
-  votes: Array<{ voteType: "upvote" | "downvote" }>; // Garantir que isso vem do backend
+  votes: Array<{ voteType: "upvote" | "downvote" }>;
   score: number;
   commentsCount: number;
   userVote?: "upvote" | "downvote" | null;
@@ -46,6 +48,17 @@ export default function Dashboard() {
     };
     fetchPosts();
   }, []);
+
+  const handleDeletePost = async (postId: string) => {
+    if (window.confirm("Tem certeza que deseja excluir este post?")) {
+      try {
+        await deletePost(postId);
+        setPosts(posts.filter((post) => post.id !== postId));
+      } catch (error) {
+        console.error("Error deleting post:", error);
+      }
+    }
+  };
 
   return (
     <>
@@ -141,7 +154,6 @@ export default function Dashboard() {
         </Toolbar>
       </AppBar>
 
-      {/* Restante do código permanece igual */}
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Typography variant="h5" fontWeight="600" mb={3}>
           {user ? `Olá, ${user.name}` : "Bem-vindo ao Fórum"}
@@ -156,110 +168,159 @@ export default function Dashboard() {
         ) : posts.length === 0 ? (
           <Typography>Nenhum post encontrado</Typography>
         ) : (
-          posts.map((post, index) => (
-            <Box key={post.id} sx={{ mb: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-                {/* Área de votação isolada */}
-                <Box
-                  sx={{
-                    mr: 2,
-                    minWidth: 80,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <div onClick={(e) => e.preventDefault()}>
-                    <VoteButtons
-                      postId={post.id}
-                      initialScore={post.score}
-                      initialVote={post.userVote}
-                    />
-                  </div>
-                </Box>
+          posts.map((post, index) => {
+            const isAuthor = user && post.author.name === user.name;
 
-                {/* Conteúdo clicável */}
-                <Box
-                  component={Link}
-                  to={`/posts/${post.id}`}
-                  sx={{
-                    flex: 1,
-                    textDecoration: "none",
-                    color: "inherit",
-                    py: 2,
-                    "&:hover": {
-                      backgroundColor: theme.palette.action.hover,
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="h5"
-                    fontWeight="700"
-                    sx={{
-                      fontSize: "1.5rem",
-                      mb: 1,
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {post.title}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: theme.palette.text.secondary,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      mb: 1.5,
-                    }}
-                  >
-                    {post.content}
-                  </Typography>
-
-                  {/* Metadados */}
+            return (
+              <Box key={post.id} sx={{ mb: 2, position: "relative" }}>
+                <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                  {/* Área de votação */}
                   <Box
                     sx={{
+                      mr: 2,
+                      minWidth: 80,
                       display: "flex",
-                      gap: 1.5,
+                      flexDirection: "column",
                       alignItems: "center",
-                      flexWrap: "wrap",
                     }}
                   >
-                    <Typography
-                      variant="caption"
-                      sx={{ color: theme.palette.text.secondary }}
-                    >
-                      Postado por {post.author?.name}
-                    </Typography>
-                    <Typography variant="caption">•</Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: theme.palette.text.secondary }}
-                    >
-                      {new Date(post.createdAt).toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </Typography>
-                    <Typography variant="caption">•</Typography>
-                    <Typography
-                      variant="caption"
+                    <div onClick={(e) => e.preventDefault()}>
+                      <VoteButtons
+                        postId={post.id}
+                        initialScore={post.score}
+                        initialVote={post.userVote}
+                      />
+                    </div>
+                  </Box>
+
+                  {/* Conteúdo principal */}
+                  <Box sx={{ flex: 1 }}>
+                    <Box
+                      component={Link}
+                      to={`/posts/${post.id}`}
                       sx={{
-                        color: theme.palette.text.secondary,
-                        fontWeight: 500,
+                        textDecoration: "none",
+                        color: "inherit",
+                        display: "block",
+                        "&:hover": {
+                          backgroundColor: theme.palette.action.hover,
+                        },
                       }}
                     >
-                      {post.commentsCount} comentários
-                    </Typography>
+                      <Typography
+                        variant="h5"
+                        fontWeight="700"
+                        sx={{
+                          fontSize: "1.5rem",
+                          mb: 1,
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {post.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: theme.palette.text.secondary,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          mb: 1.5,
+                        }}
+                      >
+                        {post.content}
+                      </Typography>
+                    </Box>
+
+                    {/* Metadados */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mt: 1,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1.5,
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{ color: theme.palette.text.secondary }}
+                        >
+                          Postado por {post.author?.name}
+                        </Typography>
+
+                        {isAuthor && (
+                          <>
+                            <Typography variant="caption">•</Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: theme.palette.success.main,
+                                fontWeight: 500,
+                              }}
+                            >
+                              Seu post
+                            </Typography>
+                          </>
+                        )}
+
+                        <Typography variant="caption">•</Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: theme.palette.text.secondary }}
+                        >
+                          {new Date(post.createdAt).toLocaleDateString(
+                            "pt-BR",
+                            {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )}
+                        </Typography>
+                        <Typography variant="caption">•</Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: theme.palette.text.secondary,
+                            fontWeight: 500,
+                          }}
+                        >
+                          {post.commentsCount} comentário
+                          {post.commentsCount !== 1 && "s"}
+                        </Typography>
+                      </Box>
+
+                      {isAuthor && (
+                        <IconButton
+                          onClick={() => handleDeletePost(post.id)}
+                          size="small"
+                          sx={{
+                            color: theme.palette.error.main,
+                            "&:hover": {
+                              backgroundColor: theme.palette.action.hover,
+                            },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
 
-              {index < posts.length - 1 && <Divider sx={{ mt: 2 }} />}
-            </Box>
-          ))
+                {index < posts.length - 1 && <Divider sx={{ mt: 2 }} />}
+              </Box>
+            );
+          })
         )}
       </Container>
     </>

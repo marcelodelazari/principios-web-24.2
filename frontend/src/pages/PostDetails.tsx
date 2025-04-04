@@ -24,10 +24,11 @@ interface Post {
   id: string;
   title: string;
   content: string;
-  authorId: string;
-  authorName: string;
+  author: { name: string };
   createdAt: string;
+  votes: Array<{ voteType: "upvote" | "downvote" }>;
   score: number;
+  commentsCount: number;
   userVote?: "upvote" | "downvote" | null;
 }
 
@@ -91,6 +92,9 @@ export default function PostDetails(): ReactElement {
 
       setComments([completeComment, ...comments]);
       setNewComment("");
+      if (post) {
+        setPost({ ...post, commentsCount: post.commentsCount + 1 });
+      }
     } catch (error) {
       console.error("Error posting comment:", error);
     }
@@ -105,75 +109,106 @@ export default function PostDetails(): ReactElement {
         component={Link}
         to="/"
         startIcon={<ArrowBackIcon />}
-        sx={{ mb: 3, color: "text.primary" }}
+        sx={{
+          mb: 3,
+          color: "text.primary",
+          textTransform: "none",
+          "&:hover": { backgroundColor: "transparent" },
+        }}
       >
         Voltar para o Dashboard
       </Button>
 
       {/* Post Principal */}
-      <Card sx={{ mb: 4, boxShadow: 3 }}>
-        <CardContent>
-          <Stack direction="row" spacing={2} alignItems="flex-start">
+      <Box sx={{ display: "flex", alignItems: "flex-start", mb: 4 }}>
+        {/* Área de Votação */}
+        <Box
+          sx={{
+            mr: 2,
+            minWidth: 80,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <div onClick={(e) => e.preventDefault()}>
             <VoteButtons
               postId={post.id}
               initialScore={post.score}
               initialVote={post.userVote}
             />
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography
-                variant="h4"
-                gutterBottom
-                sx={{ fontWeight: 600, mb: 2 }}
-              >
-                {post.title}
-              </Typography>
-              <Typography
-                variant="body1"
+          </div>
+        </Box>
+
+        {/* Conteúdo do Post */}
+        <Card sx={{ flex: 1, boxShadow: 3 }}>
+          <CardContent>
+            <Typography
+              variant="h5"
+              sx={{
+                fontSize: "1.5rem",
+                mb: 1.5,
+                lineHeight: 1.3,
+                fontWeight: 700,
+              }}
+            >
+              {post.title}
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                whiteSpace: "pre-line",
+                lineHeight: 1.6,
+                mb: 2.5,
+                color: "text.secondary",
+              }}
+            >
+              {post.content}
+            </Typography>
+
+            {/* Metadados */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1.5,
+                alignItems: "center",
+                flexWrap: "wrap",
+                mt: 2,
+              }}
+            >
+              <Avatar
                 sx={{
-                  whiteSpace: "pre-line",
-                  lineHeight: 1.6,
-                  mb: 3,
-                  fontFamily: "inherit",
+                  width: 24,
+                  height: 24,
+                  fontSize: "0.8rem",
+                  bgcolor: theme.palette.primary.main,
                 }}
               >
-                {post.content}
+                {post.author.name[0]}
+              </Avatar>
+              <Typography variant="caption" color="text.secondary">
+                Postado por {post.author.name}
               </Typography>
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                sx={{ color: "text.secondary", mt: 2 }}
-              >
-                <Avatar
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    fontSize: "0.8rem",
-                    bgcolor: theme.palette.primary.main,
-                  }}
-                >
-                  {post.authorName}
-                </Avatar>
-                <Typography variant="body2">
-                  Postado por {post.authorName}
-                </Typography>
-                <Divider orientation="vertical" flexItem />
-                <Typography variant="body2">
-                  {formatDistanceToNow(new Date(post.createdAt), {
-                    addSuffix: true,
-                    locale: ptBR,
-                  })}
-                </Typography>
-              </Stack>
+              <Typography variant="caption">•</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formatDistanceToNow(new Date(post.createdAt), {
+                  addSuffix: true,
+                  locale: ptBR,
+                })}
+              </Typography>
+              <Typography variant="caption">•</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {post.commentsCount} comentário{post.commentsCount !== 1 && "s"}
+              </Typography>
             </Box>
-          </Stack>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Seção de Comentários */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-          Comentários ({comments.length})
+        <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
+          Comentários ({post.commentsCount})
         </Typography>
 
         {user && (
@@ -206,7 +241,12 @@ export default function PostDetails(): ReactElement {
                   <Typography variant="caption" color="text.secondary">
                     {newComment.length}/500 caracteres
                   </Typography>
-                  <Button type="submit" variant="contained" size="medium">
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="medium"
+                    sx={{ textTransform: "none" }}
+                  >
                     Publicar comentário
                   </Button>
                 </Box>
@@ -232,33 +272,35 @@ export default function PostDetails(): ReactElement {
               >
                 {comment.content}
               </Typography>
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                sx={{ color: "text.secondary" }}
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1.5,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
               >
                 <Avatar
                   sx={{
-                    width: 36,
-                    height: 36,
+                    width: 24,
+                    height: 24,
                     fontSize: "0.8rem",
                     bgcolor: theme.palette.secondary.main,
                   }}
                 >
-                  {comment.authorName}
+                  {comment.authorName[0]}
                 </Avatar>
-                <Typography variant="caption">
+                <Typography variant="caption" color="text.secondary">
                   {comment.authorName}
                 </Typography>
-                <Divider orientation="vertical" flexItem />
-                <Typography variant="caption">
+                <Typography variant="caption">•</Typography>
+                <Typography variant="caption" color="text.secondary">
                   {formatDistanceToNow(new Date(comment.createdAt), {
                     addSuffix: true,
                     locale: ptBR,
                   })}
                 </Typography>
-              </Stack>
+              </Box>
             </CardContent>
           </Card>
         ))}
