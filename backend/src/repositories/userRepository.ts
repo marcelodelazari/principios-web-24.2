@@ -9,7 +9,6 @@ export class UserRepository {
     });
   }
 
-  // Adicione este método se não existir:
   async getUserById(userId: number) {
     return prisma.user.findUnique({
       where: { id: userId },
@@ -17,6 +16,7 @@ export class UserRepository {
         id: true,
         name: true,
         email: true,
+        isAdmin: true,
         createdAt: true,
       },
     });

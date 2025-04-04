@@ -156,7 +156,9 @@ export default function Dashboard() {
 
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Typography variant="h5" fontWeight="600" mb={3}>
-          {user ? `Olá, ${user.name}` : "Bem-vindo ao Fórum"}
+          {user
+            ? `Olá, ${user.name}${user.isAdmin ? " (Administrador)" : ""}`
+            : "Bem-vindo ao Fórum"}
         </Typography>
 
         <Typography variant="h6" fontWeight="700" mb={2}>
@@ -170,6 +172,7 @@ export default function Dashboard() {
         ) : (
           posts.map((post, index) => {
             const isAuthor = user && post.author.name === user.name;
+            const showDelete = isAuthor || user?.isAdmin;
 
             return (
               <Box key={post.id} sx={{ mb: 2, position: "relative" }}>
@@ -299,7 +302,7 @@ export default function Dashboard() {
                         </Typography>
                       </Box>
 
-                      {isAuthor && (
+                      {showDelete && (
                         <IconButton
                           onClick={() => handleDeletePost(post.id)}
                           size="small"

@@ -45,7 +45,7 @@ export const getCurrentUser = async () => {
       return null;
     }
 
-    return response.data;
+    return { ...response.data, isAdmin: response.data.isAdmin };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       localStorage.removeItem("token");

@@ -72,20 +72,59 @@ export class PostRepository {
     });
   }
 
-  // Método para deletar post
-  async deletePost(postId: string, authorId: string) {
-    return prisma.post.delete({
-      where: {
-        id: parseInt(postId),
-        authorId: parseInt(authorId),
-      },
-      include: {
-        comments: true, // Força o cascade pelo Prisma
-        votes: true,
-      },
-    });
-  }
+  async deletePost(postId: string, authorId: string, isAdmin: boolean) {
+    const parsedPostId = Number(postId);
+    const parsedAuthorId = Number(authorId);
+    console.log(
+      "[DEBUG] Post ID convertido:",
+      parsedPostId,
+      "Tipo:",
+      typeof parsedPostId
+    );
 
+    // Validação reforçada
+    if (isNaN(parsedPostId)) {
+      throw new Error(`ID do post inválido: ${postId}`);
+    }
+
+    const whereClause: any = { id: parsedPostId };
+
+    if (!isAdmin) {
+      if (isNaN(parsedAuthorId)) {
+        throw new Error(`ID do autor inválido: ${authorId}`);
+      }
+      whereClause.authorId = parsedAuthorId;
+    }
+
+    try {
+      // Verificação explícita de existência
+      const post = await prisma.post.findUnique({
+        where: { id: parsedPostId },
+      });
+
+      console.log("[DEBUG] Post encontrado:", post);
+
+      if (!post) {
+        throw new Error(`Post ${parsedPostId} não encontrado`);
+      }
+
+      console.log("[DEBUG] Where clause final:", JSON.stringify(whereClause));
+
+      return await prisma.post.delete({
+        where: { id: parsedPostId },
+        include: {
+          comments: true,
+          votes: true,
+        },
+      });
+    } catch (error: any) {
+      console.error("Erro detalhado:", error);
+      if (error.code === "P2025") {
+        throw new Error("Post não encontrado com os critérios fornecidos");
+      }
+      throw new Error(`Falha ao deletar post: ${error.message}`);
+    }
+  }
   // Método para lidar com votos com transação
   async handleVote(postId: number, userId: number, voteType: VoteType | null) {
     return prisma.$transaction(async (tx) => {

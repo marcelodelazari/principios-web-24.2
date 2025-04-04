@@ -11,6 +11,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  isAdmin: boolean;
 }
 
 interface AuthContextType {
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               id: response.data.id,
               name: response.data.name,
               email: response.data.email,
+              isAdmin: response.data.isAdmin, // Adicionado
             });
           } else {
             logout();

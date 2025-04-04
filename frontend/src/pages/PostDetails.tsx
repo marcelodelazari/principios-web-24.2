@@ -19,6 +19,8 @@ import axios from "axios";
 import VoteButtons from "../components/VoteButtons";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { deletePost } from "../services/api";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface Post {
   id: string;
@@ -39,6 +41,17 @@ interface Comment {
   createdAt: string;
   authorName: string;
 }
+
+const handleDeletePost = async (postId: string) => {
+  if (window.confirm("Tem certeza que deseja excluir este post?")) {
+    try {
+      await deletePost(postId);
+      window.location.href = "/"; // Redireciona após deletar
+    } catch (error) {
+      console.error("Error deleting post:", error);
+    }
+  }
+};
 
 export default function PostDetails(): ReactElement {
   const { postId } = useParams();
@@ -167,6 +180,17 @@ export default function PostDetails(): ReactElement {
             </Typography>
 
             {/* Metadados */}
+            {user?.isAdmin && (
+              <Button
+                onClick={() => handleDeletePost(post.id)}
+                startIcon={<DeleteIcon />}
+                color="error"
+                size="small"
+                sx={{ ml: 2 }}
+              >
+                Deletar Post
+              </Button>
+            )}
             <Box
               sx={{
                 display: "flex",

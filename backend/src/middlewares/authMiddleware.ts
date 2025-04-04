@@ -5,7 +5,7 @@ import { pool } from "../config/db";
 
 // Middleware para autenticação JWT
 export const authenticateJWT = (
-  req: Request & { userId?: number },
+  req: Request & { userId?: number; isAdmin?: boolean },
   res: Response,
   next: NextFunction
 ): void => {
@@ -41,6 +41,7 @@ export const authenticateJWT = (
 
         // Conversão explícita para número
         req.userId = Number(decoded.userId);
+        req.isAdmin = Boolean(decoded.isAdmin); // Define isAdmin
         console.log(
           "[AUTH] Processed UserID:",
           req.userId,

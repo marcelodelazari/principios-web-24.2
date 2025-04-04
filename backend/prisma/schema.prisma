@@ -38,7 +38,7 @@ model Comment {
   createdAt DateTime  @default(now())
   postId    Int
   authorId  Int
-  post      Post      @relation(fields: [postId], references: [id])
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   author    User      @relation(fields: [authorId], references: [id])
   votes     CommentVote[]
 }
@@ -49,7 +49,7 @@ model PostVote {
   createdAt DateTime  @default(now())
   postId    Int
   userId    Int
-  post      Post      @relation(fields: [postId], references: [id])
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])
 
   @@unique([postId, userId])
@@ -61,7 +61,7 @@ model CommentVote {
   createdAt  DateTime @default(now())
   commentId  Int
   userId     Int
-  comment    Comment  @relation(fields: [commentId], references: [id])
+  comment    Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id])
 
   @@unique([commentId, userId])

@@ -64,10 +64,9 @@ export class PostService {
   }
 
   // Método para deletar post
-  async deletePost(postId: string, authorId: string) {
-    return this.postRepository.deletePost(postId, authorId);
+  async deletePost(postId: string, authorId: string, isAdmin: boolean) {
+    return this.postRepository.deletePost(postId, authorId, isAdmin);
   }
-
   async votePost(postId: string, userId: string, voteType: string | null) {
     // Validação
     if (voteType && !["upvote", "downvote"].includes(voteType)) {

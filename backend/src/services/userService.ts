@@ -33,6 +33,7 @@ export class UserService {
       id: user.id,
       name: user.name,
       email: user.email,
+      isAdmin: user.isAdmin,
       createdAt: user.createdAt,
     };
   }

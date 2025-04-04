@@ -18,7 +18,10 @@ export const loginService = async (email: string, password: string) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id },
+      {
+        userId: user.id,
+        isAdmin: user.isAdmin, // Adiciona o isAdmin ao payload
+      },
       process.env.JWT_SECRET || "secret",
       { expiresIn: "1h" }
     );

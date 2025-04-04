@@ -77,13 +77,20 @@ export class PostController {
     try {
       const postId = req.params.postId;
       const authorId = (req as any).userId;
+      const isAdmin = (req as any).isAdmin || false;
 
-      const result = await this.postService.deletePost(postId, authorId);
+      const result = await this.postService.deletePost(
+        postId,
+        authorId,
+        isAdmin
+      );
       res.status(200).json(result);
     } catch (error: any) {
-      res
-        .status(400)
-        .json({ message: error.message || "Erro interno do servidor" });
+      console.error("Erro ao deletar post:", error); // Log detalhado
+      res.status(400).json({
+        message: error.message || "Erro interno do servidor",
+        code: error.code, // Adicione isso para depuração
+      });
     }
   };
 
