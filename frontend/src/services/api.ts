@@ -73,3 +73,8 @@ export const deletePost = async (postId: string) => {
   const response = await api.delete(`/posts/${postId}`);
   return response.data;
 };
+
+export const deleteComment = async (postId: string, commentId: string) => {
+  const response = await api.delete(`/posts/${postId}/comments/${commentId}`);
+  return response.data;
+};

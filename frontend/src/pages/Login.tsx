@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from "../services/api";
+import { loginUser, getCurrentUser } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import {
   TextField,
@@ -27,6 +27,13 @@ export default function Login() {
 
       if (response && response.token && response.user) {
         login(response.token, response.user);
+
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          // Atualize o contexto com os dados completos (incluindo isAdmin)
+          login(response.token, currentUser);
+        }
+
         setTimeout(() => {
           navigate("/");
         }, 100);

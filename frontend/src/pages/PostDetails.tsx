@@ -8,10 +8,9 @@ import {
   TextField,
   Button,
   Box,
-  Divider,
   Avatar,
-  Stack,
   useTheme,
+  IconButton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useAuth } from "../contexts/AuthContext";
@@ -19,7 +18,7 @@ import axios from "axios";
 import VoteButtons from "../components/VoteButtons";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { deletePost } from "../services/api";
+import { deleteComment, deletePost } from "../services/api";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 interface Post {
@@ -46,7 +45,7 @@ const handleDeletePost = async (postId: string) => {
   if (window.confirm("Tem certeza que deseja excluir este post?")) {
     try {
       await deletePost(postId);
-      window.location.href = "/"; // Redireciona após deletar
+      window.location.href = "/";
     } catch (error) {
       console.error("Error deleting post:", error);
     }
@@ -70,8 +69,15 @@ export default function PostDetails(): ReactElement {
           axios.get(`/posts/${postId}/comments`),
         ]);
 
+        const processedComments = commentsResponse.data.map((comment: any) => ({
+          ...comment,
+          id: comment.id.toString(),
+          authorId: comment.authorId.toString(),
+          createdAt: new Date(comment.createdAt).toISOString(),
+        }));
+
         setPost(postResponse.data);
-        setComments(commentsResponse.data);
+        setComments(processedComments);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -98,9 +104,10 @@ export default function PostDetails(): ReactElement {
 
       const completeComment = {
         ...response.data,
+        id: response.data.id.toString(),
+        authorId: user.id.toString(),
         authorName: user.name,
-        content: newComment,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(response.data.createdAt).toISOString(),
       };
 
       setComments([completeComment, ...comments]);
@@ -134,7 +141,6 @@ export default function PostDetails(): ReactElement {
 
       {/* Post Principal */}
       <Box sx={{ display: "flex", alignItems: "flex-start", mb: 4 }}>
-        {/* Área de Votação */}
         <Box
           sx={{
             mr: 2,
@@ -153,7 +159,6 @@ export default function PostDetails(): ReactElement {
           </div>
         </Box>
 
-        {/* Conteúdo do Post */}
         <Card sx={{ flex: 1, boxShadow: 3 }}>
           <CardContent>
             <Typography
@@ -179,7 +184,6 @@ export default function PostDetails(): ReactElement {
               {post.content}
             </Typography>
 
-            {/* Metadados */}
             {user?.isAdmin && (
               <Button
                 onClick={() => handleDeletePost(post.id)}
@@ -290,12 +294,66 @@ export default function PostDetails(): ReactElement {
             }}
           >
             <CardContent>
-              <Typography
-                variant="body1"
-                sx={{ whiteSpace: "pre-line", lineHeight: 1.6, mb: 1.5 }}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
               >
-                {comment.content}
-              </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    whiteSpace: "pre-line",
+                    lineHeight: 1.6,
+                    mb: 1.5,
+                    flexGrow: 1,
+                    pr: 2,
+                  }}
+                >
+                  {comment.content}
+                </Typography>
+
+                {(user?.id.toString() === comment.authorId ||
+                  user?.isAdmin) && (
+                  <IconButton
+                    onClick={async () => {
+                      if (
+                        window.confirm(
+                          "Tem certeza que deseja excluir este comentário?"
+                        )
+                      ) {
+                        try {
+                          await deleteComment(postId!.toString(), comment.id);
+                          setComments((prev) =>
+                            prev.filter((c) => c.id !== comment.id)
+                          );
+                          if (post) {
+                            setPost({
+                              ...post,
+                              commentsCount: post.commentsCount - 1,
+                            });
+                          }
+                        } catch (error) {
+                          console.error("Erro ao deletar comentário:", error);
+                        }
+                      }
+                    }}
+                    size="small"
+                    sx={{
+                      color: theme.palette.error.main,
+                      "&:hover": {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                      mt: -1,
+                      mr: -1,
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
+
               <Box
                 sx={{
                   display: "flex",
@@ -317,6 +375,22 @@ export default function PostDetails(): ReactElement {
                 <Typography variant="caption" color="text.secondary">
                   {comment.authorName}
                 </Typography>
+
+                {user?.id.toString() === comment.authorId && (
+                  <>
+                    <Typography variant="caption">•</Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: theme.palette.success.main,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Seu comentário
+                    </Typography>
+                  </>
+                )}
+
                 <Typography variant="caption">•</Typography>
                 <Typography variant="caption" color="text.secondary">
                   {formatDistanceToNow(new Date(comment.createdAt), {

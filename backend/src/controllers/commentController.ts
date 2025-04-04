@@ -67,13 +67,20 @@ export class CommentController {
     try {
       const commentId = req.params.commentId;
       const userId = (req as any).userId;
+      const isAdmin = Boolean((req as any).isAdmin); // Conversão explícita
 
-      const result = await this.commentService.deleteComment(commentId, userId);
+      const result = await this.commentService.deleteComment(
+        commentId,
+        userId,
+        isAdmin
+      );
       res.status(200).json(result);
     } catch (error: any) {
-      res
-        .status(400)
-        .json({ message: error.message || "Erro interno do servidor" });
+      console.error("Erro ao deletar comentário:", error);
+      res.status(400).json({
+        message: error.message || "Erro interno",
+        code: error.code,
+      });
     }
   };
 }

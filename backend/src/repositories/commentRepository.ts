@@ -10,7 +10,7 @@ export class CommentRepository {
          content,
          "createdAt",
          "authorId",
-         (SELECT name FROM "User" WHERE id = $2) as "authorName"`, // Garanta todas as colunas
+         (SELECT name FROM "User" WHERE id = $2) as "authorName"`,
       [postId, userId, content]
     );
     return result.rows[0];
@@ -36,15 +36,16 @@ export class CommentRepository {
     return result.rows[0];
   }
 
-  async deleteComment(commentId: string, userId: string) {
-    const result = await pool.query(
-      'DELETE FROM "Comment" WHERE id = $1 AND "authorId" = $2 RETURNING *',
-      [commentId, userId]
-    );
-    if (result && result.rowCount !== null) {
-      return result.rowCount > 0;
-    } else {
-      return false;
+  async deleteComment(commentId: string, userId: string, isAdmin: boolean) {
+    let query = 'DELETE FROM "Comment" WHERE id = $1';
+    const params: any[] = [commentId];
+    
+    // Só verifica autor se não for admin
+    if (!isAdmin) {
+      query += ' AND "authorId" = $2';
+      params.push(userId);
     }
+  
+    const result = await pool.query(query + ' RETURNING *', params);
+    return result.rowCount !== null && result.rowCount > 0;
   }
-}

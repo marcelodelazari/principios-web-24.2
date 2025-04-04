@@ -35,10 +35,11 @@ export class CommentService {
     return updatedComment;
   }
 
-  async deleteComment(commentId: string, userId: string) {
+  async deleteComment(commentId: string, userId: string, isAdmin: boolean) {
     const deleted = await this.commentRepository.deleteComment(
       commentId,
-      userId
+      userId,
+      isAdmin
     );
     if (!deleted) {
       throw new Error("Comentário não encontrado ou usuário não autorizado");

@@ -46,8 +46,9 @@ export default function Dashboard() {
         setLoading(false);
       }
     };
+
     fetchPosts();
-  }, []);
+  }, [user?.id]); // Atualiza quando o ID do usuário muda
 
   const handleDeletePost = async (postId: string) => {
     if (window.confirm("Tem certeza que deseja excluir este post?")) {
@@ -177,7 +178,6 @@ export default function Dashboard() {
             return (
               <Box key={post.id} sx={{ mb: 2, position: "relative" }}>
                 <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-                  {/* Área de votação */}
                   <Box
                     sx={{
                       mr: 2,
@@ -196,7 +196,6 @@ export default function Dashboard() {
                     </div>
                   </Box>
 
-                  {/* Conteúdo principal */}
                   <Box sx={{ flex: 1 }}>
                     <Box
                       component={Link}
@@ -236,7 +235,6 @@ export default function Dashboard() {
                       </Typography>
                     </Box>
 
-                    {/* Metadados */}
                     <Box
                       sx={{
                         display: "flex",
