@@ -37,8 +37,21 @@ export const registerUser = async (userData: {
   return response.data;
 };
 export const getCurrentUser = async () => {
-  const response = await api.get("/users/me");
-  return response.data;
+  try {
+    const response = await api.get("/users/me");
+
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      return null;
+    }
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      localStorage.removeItem("token");
+    }
+    return null;
+  }
 };
 
 export const getPostById = async (postId: string) => {

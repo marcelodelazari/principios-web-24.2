@@ -9,10 +9,15 @@ export class UserRepository {
     });
   }
 
+  // Adicione este método se não existir:
   async getUserById(userId: number) {
     return prisma.user.findUnique({
-      where: {
-        id: userId,
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
       },
     });
   }

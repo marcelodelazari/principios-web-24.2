@@ -1,6 +1,13 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/userService";
 
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: number;
+    }
+  }
+}
 export class UserController {
   private userService: UserService;
 
@@ -59,19 +66,12 @@ export class UserController {
   };
   getCurrentUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = Number((req as any).userId);
-
-      if (isNaN(userId)) {
-        res.status(401).json({ message: "ID de usuário inválido" });
+      if (!req.userId) {
+        res.status(401).json({ message: "Não autenticado" });
         return;
       }
 
-      const user = await this.userService.getUserById(userId);
-
-      if (!user) {
-        res.status(404).json({ message: "Usuário não encontrado" });
-        return;
-      }
+      const user = await this.userService.getUserById(req.userId);
 
       res.status(200).json({
         id: user.id,
@@ -80,7 +80,10 @@ export class UserController {
         createdAt: user.createdAt,
       });
     } catch (error: any) {
-      res.status(500).json({ message: error.message || "Erro interno" });
+      console.error("Erro no getCurrentUser:", error);
+      res.status(500).json({
+        message: error.message || "Erro ao obter usuário atual",
+      });
     }
   };
 }

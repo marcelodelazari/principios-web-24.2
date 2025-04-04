@@ -19,9 +19,22 @@ export class UserService {
   }
 
   async getUserById(userId: number) {
+    if (isNaN(userId)) {
+      throw new Error("ID de usuário inválido");
+    }
+
     const user = await this.userRepository.getUserById(userId);
-    if (!user) throw new Error("Usuário não encontrado.");
-    return user;
+
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+    };
   }
 
   async updateUser(userId: number, data: { name?: string; email?: string }) {
