@@ -23,7 +23,10 @@ interface Post {
   content: string;
   author: { name: string };
   createdAt: string;
-  votes: Array<{ voteType: "upvote" | "downvote" }>;
+  votes: Array<{
+    voteType: "upvote" | "downvote";
+    userId: number;
+  }>;
   score: number;
   commentsCount: number;
   userVote?: "upvote" | "downvote" | null;

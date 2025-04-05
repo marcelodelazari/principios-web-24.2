@@ -18,21 +18,31 @@ export class PostService {
     return this.postRepository.createPost(title, content, authorId);
   }
 
-  // Método para listar todos os posts
+  // backend/src/services/postService.ts
+  // backend/src/services/postService.ts
   async getPosts(currentUserId?: number) {
     const posts = await this.postRepository.getPosts(currentUserId);
 
-    return posts.map((post) => ({
-      ...post,
-      id: post.id.toString(),
-      authorId: post.authorId.toString(),
-      score: post.votes.reduce((acc, vote) => {
-        // Cálculo correto
+    return posts.map((post) => {
+      // Calcula o score total com todos os votos
+      const totalScore = post.votes.reduce((acc, vote) => {
         return vote.voteType === "upvote" ? acc + 1 : acc - 1;
-      }, 0),
-      commentsCount: post._count.comments,
-      userVote: post.votes[0]?.voteType || null,
-    }));
+      }, 0);
+
+      // Encontra o voto do usuário atual (se existir)
+      const userVote = currentUserId
+        ? post.votes.find((v) => v.userId === currentUserId)?.voteType
+        : null;
+
+      return {
+        ...post,
+        id: post.id.toString(),
+        authorId: post.authorId.toString(),
+        score: totalScore, // Usa o score calculado com todos os votos
+        commentsCount: post._count.comments,
+        userVote: userVote || null, // Mantém a informação do voto do usuário
+      };
+    });
   }
 
   // Método para obter post por ID

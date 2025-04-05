@@ -58,6 +58,32 @@ export const authenticateJWT = (
   }
 };
 
+// backend/src/middlewares/authMiddleware.ts
+export const optionalAuthenticateJWT = (
+  req: Request & { userId?: number; isAdmin?: boolean },
+  res: Response,
+  next: NextFunction
+): void => {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    const token = authHeader.split(" ")[1];
+    jwt.verify(
+      token,
+      process.env.JWT_SECRET || "secret",
+      (err, decoded: any) => {
+        if (!err && decoded?.userId) {
+          req.userId = Number(decoded.userId);
+          req.isAdmin = Boolean(decoded.isAdmin);
+        }
+        next();
+      }
+    );
+  } else {
+    next();
+  }
+};
+
 // Middleware para validação do registro de usuário
 export const validateRegister = async (
   req: Request,

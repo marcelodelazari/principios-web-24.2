@@ -26,6 +26,7 @@ export default function VoteButtons({
   const { user } = useAuth();
 
   // Sincroniza com props externas
+  // frontend/src/components/VoteButtons.tsx
   useEffect(() => {
     setScore(initialScore);
     setUserVote(initialVote);

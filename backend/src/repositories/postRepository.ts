@@ -15,13 +15,16 @@ export class PostRepository {
   }
 
   // Método para listar todos os posts com score calculado
+  // backend/src/repositories/postRepository.ts
   async getPosts(currentUserId?: number) {
     return prisma.post.findMany({
       include: {
         author: { select: { name: true } },
         votes: {
-          where: currentUserId ? { userId: currentUserId } : undefined,
-          select: { voteType: true },
+          select: {
+            voteType: true,
+            userId: true, // Adicionado para verificar o voto do usuário
+          },
         },
         _count: { select: { comments: true } },
       },

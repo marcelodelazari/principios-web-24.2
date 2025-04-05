@@ -39,13 +39,14 @@ export class CommentRepository {
   async deleteComment(commentId: string, userId: string, isAdmin: boolean) {
     let query = 'DELETE FROM "Comment" WHERE id = $1';
     const params: any[] = [commentId];
-    
+
     // Só verifica autor se não for admin
     if (!isAdmin) {
       query += ' AND "authorId" = $2';
       params.push(userId);
     }
-  
-    const result = await pool.query(query + ' RETURNING *', params);
+
+    const result = await pool.query(query + " RETURNING *", params);
     return result.rowCount !== null && result.rowCount > 0;
   }
+}
