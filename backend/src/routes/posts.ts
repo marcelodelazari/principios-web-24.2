@@ -47,7 +47,11 @@ postsRouter.post(
 );
 
 // Listar todos os comentários de um post (não precisa de autenticação)
-postsRouter.get("/posts/:postId/comments", commentController.getCommentsByPost);
+postsRouter.get(
+  "/posts/:postId/comments",
+  optionalAuthenticateJWT, // Adicione este middleware
+  commentController.getCommentsByPost
+);
 
 // Atualizar comentário (usuário autenticado)
 postsRouter.put(

@@ -29,16 +29,14 @@ export class CommentService {
             null
           : null;
 
-      // Corrigindo a estrutura para manter authorName
       return {
         ...comment,
         id: comment.id.toString(),
         postId: comment.postId.toString(),
         authorId: comment.authorId.toString(),
-        authorName: comment.author.name, // Adiciona o nome do autor aqui
+        authorName: comment.author.name,
         score,
         userVote,
-        // Remove o objeto author se necessário
         author: undefined,
       };
     });

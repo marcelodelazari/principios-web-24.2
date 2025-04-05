@@ -61,7 +61,11 @@ export const getPostById = async (postId: string) => {
 
 export const getCommentsByPost = async (postId: string) => {
   const response = await api.get(`/posts/${postId}/comments`);
-  return response.data;
+  return response.data.map((comment: any) => ({
+    ...comment,
+    score: comment.score || 0,
+    userVote: comment.userVote || null,
+  }));
 };
 
 export const createComment = async (postId: string, content: string) => {
@@ -76,5 +80,14 @@ export const deletePost = async (postId: string) => {
 
 export const deleteComment = async (postId: string, commentId: string) => {
   const response = await api.delete(`/posts/${postId}/comments/${commentId}`);
+  return response.data;
+};
+
+// Adicione estas funções
+export const voteComment = async (
+  commentId: string,
+  voteType: string | null
+) => {
+  const response = await api.post(`/comments/${commentId}/vote`, { voteType });
   return response.data;
 };

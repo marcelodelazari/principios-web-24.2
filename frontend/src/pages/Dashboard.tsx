@@ -192,7 +192,8 @@ export default function Dashboard() {
                   >
                     <div onClick={(e) => e.preventDefault()}>
                       <VoteButtons
-                        postId={post.id}
+                        targetId={post.id}
+                        type="post"
                         initialScore={post.score}
                         initialVote={post.userVote}
                       />

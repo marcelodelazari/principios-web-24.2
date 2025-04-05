@@ -48,6 +48,12 @@ interface Comment {
   authorId: string;
   createdAt: string;
   authorName: string;
+  score: number;
+  userVote: "upvote" | "downvote" | null;
+  votes: Array<{
+    voteType: "upvote" | "downvote";
+    userId: number;
+  }>;
 }
 
 const handleDeletePost = async (postId: string) => {
@@ -85,11 +91,14 @@ export default function PostDetails(): ReactElement {
           authorId: postData.authorId.toString(),
         };
 
+        // Dentro do useEffect em PostDetails.tsx
         const processedComments = commentsData.map((comment: any) => ({
           ...comment,
           id: comment.id.toString(),
           authorId: comment.authorId.toString(),
           createdAt: new Date(comment.createdAt).toISOString(),
+          score: comment.score,
+          userVote: comment.userVote || null,
         }));
 
         setPost(processedPost);
@@ -168,9 +177,21 @@ export default function PostDetails(): ReactElement {
         >
           <div onClick={(e) => e.preventDefault()}>
             <VoteButtons
-              postId={post.id}
+              targetId={post.id}
+              type="post"
               initialScore={post.score}
               initialVote={post.userVote}
+              onVoteUpdate={(newScore, newVote) => {
+                setPost((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        score: newScore,
+                        userVote: newVote,
+                      }
+                    : null
+                );
+              }}
             />
           </div>
         </Box>
@@ -313,107 +334,149 @@ export default function PostDetails(): ReactElement {
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: "flex-start",
+                  gap: 2,
                 }}
               >
-                <Typography
-                  variant="body1"
+                {/* Botões de Voto */}
+                <Box
                   sx={{
-                    whiteSpace: "pre-line",
-                    lineHeight: 1.6,
-                    mb: 1.5,
-                    flexGrow: 1,
-                    pr: 2,
+                    minWidth: 80,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
                   }}
                 >
-                  {comment.content}
-                </Typography>
-
-                {(user?.id.toString() === comment.authorId ||
-                  user?.isAdmin) && (
-                  <IconButton
-                    onClick={async () => {
-                      if (
-                        window.confirm(
-                          "Tem certeza que deseja excluir este comentário?"
+                  <VoteButtons
+                    targetId={comment.id}
+                    type="comment"
+                    initialScore={comment.score}
+                    initialVote={comment.userVote}
+                    onVoteUpdate={(newScore, newVote) => {
+                      setComments((prev) =>
+                        prev.map((c) =>
+                          c.id === comment.id
+                            ? { ...c, score: newScore, userVote: newVote }
+                            : c
                         )
-                      ) {
-                        try {
-                          await deleteComment(postId!.toString(), comment.id);
-                          setComments((prev) =>
-                            prev.filter((c) => c.id !== comment.id)
-                          );
-                          if (post) {
-                            setPost({
-                              ...post,
-                              commentsCount: post.commentsCount - 1,
-                            });
-                          }
-                        } catch (error) {
-                          console.error("Erro ao deletar comentário:", error);
-                        }
-                      }
+                      );
                     }}
-                    size="small"
+                  />
+                </Box>
+
+                <Box sx={{ flexGrow: 1 }}>
+                  <Box
                     sx={{
-                      color: theme.palette.error.main,
-                      "&:hover": {
-                        backgroundColor: theme.palette.action.hover,
-                      },
-                      mt: -1,
-                      mr: -1,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
                     }}
                   >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                )}
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 1.5,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <Avatar
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    fontSize: "0.8rem",
-                    bgcolor: theme.palette.secondary.main,
-                  }}
-                >
-                  {comment.authorName[0]}
-                </Avatar>
-                <Typography variant="caption" color="text.secondary">
-                  {comment.authorName}
-                </Typography>
-
-                {user?.id.toString() === comment.authorId && (
-                  <>
-                    <Typography variant="caption">•</Typography>
                     <Typography
-                      variant="caption"
+                      variant="body1"
                       sx={{
-                        color: theme.palette.success.main,
-                        fontWeight: 500,
+                        whiteSpace: "pre-line",
+                        lineHeight: 1.6,
+                        mb: 1.5,
+                        flexGrow: 1,
+                        pr: 2,
                       }}
                     >
-                      Seu comentário
+                      {comment.content}
                     </Typography>
-                  </>
-                )}
 
-                <Typography variant="caption">•</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatDistanceToNow(new Date(comment.createdAt), {
-                    addSuffix: true,
-                    locale: ptBR,
-                  })}
-                </Typography>
+                    {(user?.id.toString() === comment.authorId ||
+                      user?.isAdmin) && (
+                      <IconButton
+                        onClick={async () => {
+                          if (
+                            window.confirm(
+                              "Tem certeza que deseja excluir este comentário?"
+                            )
+                          ) {
+                            try {
+                              await deleteComment(
+                                postId!.toString(),
+                                comment.id
+                              );
+                              setComments((prev) =>
+                                prev.filter((c) => c.id !== comment.id)
+                              );
+                              if (post) {
+                                setPost({
+                                  ...post,
+                                  commentsCount: post.commentsCount - 1,
+                                });
+                              }
+                            } catch (error) {
+                              console.error(
+                                "Erro ao deletar comentário:",
+                                error
+                              );
+                            }
+                          }
+                        }}
+                        size="small"
+                        sx={{
+                          color: theme.palette.error.main,
+                          "&:hover": {
+                            backgroundColor: theme.palette.action.hover,
+                          },
+                          mt: -1,
+                          mr: -1,
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 1.5,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        fontSize: "0.8rem",
+                        bgcolor: theme.palette.secondary.main,
+                      }}
+                    >
+                      {comment.authorName[0]}
+                    </Avatar>
+                    <Typography variant="caption" color="text.secondary">
+                      {comment.authorName}
+                    </Typography>
+
+                    {user?.id.toString() === comment.authorId && (
+                      <>
+                        <Typography variant="caption">•</Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: theme.palette.success.main,
+                            fontWeight: 500,
+                          }}
+                        >
+                          Seu comentário
+                        </Typography>
+                      </>
+                    )}
+
+                    <Typography variant="caption">•</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDistanceToNow(new Date(comment.createdAt), {
+                        addSuffix: true,
+                        locale: ptBR,
+                      })}
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
             </CardContent>
           </Card>

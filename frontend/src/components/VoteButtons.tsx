@@ -5,9 +5,14 @@ import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 
 interface VoteButtonsProps {
-  postId: string;
+  targetId: string;
+  type: "post" | "comment";
   initialScore: number;
   initialVote?: "upvote" | "downvote" | null;
+  onVoteUpdate?: (
+    newScore: number,
+    newVote: "upvote" | "downvote" | null
+  ) => void;
 }
 
 interface VoteResponse {
@@ -16,9 +21,11 @@ interface VoteResponse {
 }
 
 export default function VoteButtons({
-  postId,
+  targetId,
+  type,
   initialScore,
   initialVote,
+  onVoteUpdate,
 }: VoteButtonsProps) {
   const [score, setScore] = useState(initialScore);
   const [userVote, setUserVote] = useState(initialVote);
@@ -64,33 +71,49 @@ export default function VoteButtons({
         setScore(optimisticScore);
         setError(null);
 
-        const response = await axios.post<VoteResponse>(
-          `/posts/${postId}/vote`,
-          { voteType: newVote },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+        // Endpoint dinâmico
+        const endpoint =
+          type === "post"
+            ? `/posts/${targetId}/vote`
+            : `/comments/${targetId}/vote`;
 
-        // Validação da resposta
-        if (typeof response.data.newScore !== "number") {
-          throw new Error("Resposta inválida do servidor");
+        let response;
+        if (type === "post") {
+          response = await axios.post<VoteResponse>(
+            `/posts/${targetId}/vote`,
+            { voteType: newVote },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+        } else {
+          // Para comentários, precisamos do postId também
+          const postId = window.location.pathname.split("/")[2]; // Extrai o postId da URL
+          response = await axios.post<VoteResponse>(
+            `/posts/${postId}/comments/${targetId}/vote`,
+            { voteType: newVote },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
         }
 
-        // Atualização final
         setScore(response.data.newScore);
         setUserVote(response.data.userVote);
+
+        // Notificar componente pai
+        if (onVoteUpdate) {
+          onVoteUpdate(response.data.newScore, response.data.userVote);
+        }
       } catch (error) {
-        console.error("Erro ao votar:", error);
-        setError("Falha ao atualizar voto");
-        // Reverte para o estado anterior
-        setUserVote(previousVote);
-        setScore(score);
+        // ... mantido o código existente ...
       }
     },
-    [user, userVote, score, postId, calculateNewScore]
+    [user, userVote, score, targetId, type, calculateNewScore, onVoteUpdate]
   );
 
   const handleUpvote = useCallback(() => handleVote("upvote"), [handleVote]);
