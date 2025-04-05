@@ -32,6 +32,13 @@ export class PostRepository {
     });
   }
 
+  async getPostVotes(postId: number) {
+    return prisma.postVote.findMany({
+      where: { postId },
+      select: { voteType: true },
+    });
+  }
+
   // Método para calcular o score
   private calculateScore(votes: Array<{ voteType: VoteType }>) {
     return votes.reduce((acc, vote) => {
@@ -40,16 +47,16 @@ export class PostRepository {
   }
 
   // Método para obter post por ID
+  // backend/src/repositories/postRepository.ts
+
   async getPostById(postId: string, currentUserId?: number) {
     return prisma.post.findUnique({
-      where: {
-        id: parseInt(postId),
-      },
+      where: { id: parseInt(postId) },
       include: {
         author: { select: { name: true } },
         votes: {
           where: currentUserId ? { userId: currentUserId } : undefined,
-          select: { voteType: true },
+          select: { voteType: true, userId: true }, // Adicionado userId
         },
         _count: { select: { comments: true } },
       },

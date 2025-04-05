@@ -18,7 +18,13 @@ import axios from "axios";
 import VoteButtons from "../components/VoteButtons";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { deleteComment, deletePost } from "../services/api";
+import {
+  getPostById,
+  getCommentsByPost,
+  createComment,
+  deleteComment,
+  deletePost,
+} from "../services/api";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 interface Post {
@@ -27,10 +33,13 @@ interface Post {
   content: string;
   author: { name: string };
   createdAt: string;
-  votes: Array<{ voteType: "upvote" | "downvote" }>;
+  votes: Array<{
+    voteType: "upvote" | "downvote";
+    userId: number;
+  }>;
   score: number;
   commentsCount: number;
-  userVote?: "upvote" | "downvote" | null;
+  userVote?: "upvote" | "downvote" | null; // Adicionado
 }
 
 interface Comment {
@@ -64,19 +73,26 @@ export default function PostDetails(): ReactElement {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [postResponse, commentsResponse] = await Promise.all([
-          axios.get(`/posts/${postId}`),
-          axios.get(`/posts/${postId}/comments`),
+        const [postData, commentsData] = await Promise.all([
+          getPostById(postId!), // Usando o serviço API
+          getCommentsByPost(postId!), // Usando o serviço API
         ]);
 
-        const processedComments = commentsResponse.data.map((comment: any) => ({
+        const processedPost = {
+          ...postData,
+          id: postData.id.toString(),
+          createdAt: new Date(postData.createdAt).toISOString(),
+          authorId: postData.authorId.toString(),
+        };
+
+        const processedComments = commentsData.map((comment: any) => ({
           ...comment,
           id: comment.id.toString(),
           authorId: comment.authorId.toString(),
           createdAt: new Date(comment.createdAt).toISOString(),
         }));
 
-        setPost(postResponse.data);
+        setPost(processedPost);
         setComments(processedComments);
       } catch (error) {
         console.error("Error fetching data:", error);

@@ -23,7 +23,11 @@ postsRouter.post(
 postsRouter.get("/posts", optionalAuthenticateJWT, postController.getPosts);
 
 // Obter post por ID (não precisa de autenticação)
-postsRouter.get("/posts/:postId", postController.getPostById);
+postsRouter.get(
+  "/posts/:postId",
+  optionalAuthenticateJWT,
+  postController.getPostById
+);
 
 // Atualizar post (usuário autenticado)
 postsRouter.put("/posts/:postId", authenticateJWT, postController.updatePost);

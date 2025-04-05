@@ -42,7 +42,8 @@ export class PostController {
   getPostById = async (req: Request, res: Response) => {
     try {
       const postId = req.params.postId;
-      const post = await this.postService.getPostById(postId);
+      const currentUserId = (req as any).userId; // Novo
+      const post = await this.postService.getPostById(postId, currentUserId); // Alterado
       res.status(200).json(post);
     } catch (error: any) {
       res

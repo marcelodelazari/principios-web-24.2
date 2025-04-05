@@ -46,23 +46,33 @@ export class PostService {
   }
 
   // Método para obter post por ID
-  async getPostById(postId: string) {
-    const post = await this.postRepository.getPostById(postId);
+  // backend/src/services/postService.ts
+
+  async getPostById(postId: string, currentUserId?: number) {
+    const post = await this.postRepository.getPostById(postId, currentUserId);
 
     if (!post) return null;
+
+    // 1. Calcular score com TODOS os votos
+    const allVotes = await this.postRepository.getPostVotes(parseInt(postId));
+    const totalScore = allVotes.reduce((acc, vote) => {
+      return vote.voteType === "upvote" ? acc + 1 : acc - 1;
+    }, 0);
+
+    // 2. Encontrar userVote corretamente
+    const userVote = currentUserId
+      ? post.votes.find((v) => v.userId === currentUserId)?.voteType
+      : null;
 
     return {
       ...post,
       id: post.id.toString(),
       authorId: post.authorId.toString(),
-      score: post.votes.reduce((acc, vote) => {
-        return vote.voteType === "upvote" ? acc + 1 : acc - 1;
-      }, 0),
+      score: totalScore, // Score calculado com todos os votos
       commentsCount: post._count.comments,
-      userVote: post.votes[0]?.voteType || null,
+      userVote: userVote || null,
     };
   }
-
   // Método para atualizar post
   async updatePost(
     postId: string,
