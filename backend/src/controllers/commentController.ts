@@ -33,7 +33,13 @@ export class CommentController {
   getCommentsByPost = async (req: Request, res: Response) => {
     try {
       const postId = req.params.postId;
-      const comments = await this.commentService.getCommentsByPost(postId);
+      const currentUserId = (req as any).userId
+        ? parseInt((req as any).userId)
+        : undefined;
+      const comments = await this.commentService.getCommentsByPost(
+        postId,
+        currentUserId
+      );
       res.status(200).json(comments);
     } catch (error: any) {
       res
@@ -67,7 +73,7 @@ export class CommentController {
     try {
       const commentId = req.params.commentId;
       const userId = (req as any).userId;
-      const isAdmin = Boolean((req as any).isAdmin); // Conversão explícita
+      const isAdmin = Boolean((req as any).isAdmin);
 
       const result = await this.commentService.deleteComment(
         commentId,
@@ -80,6 +86,31 @@ export class CommentController {
       res.status(400).json({
         message: error.message || "Erro interno",
         code: error.code,
+      });
+    }
+  };
+
+  voteComment = async (req: Request, res: Response) => {
+    try {
+      const { voteType } = req.body;
+      const userId = (req as any).userId;
+      const commentId = req.params.commentId;
+
+      const result = await this.commentService.voteComment(
+        commentId,
+        userId,
+        voteType
+      );
+
+      res.status(200).json({
+        success: true,
+        newScore: result.newScore,
+        userVote: result.userVote,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
       });
     }
   };

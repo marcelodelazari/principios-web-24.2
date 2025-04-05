@@ -59,4 +59,10 @@ postsRouter.delete(
   commentController.deleteComment
 );
 
+postsRouter.post(
+  "/posts/:postId/comments/:commentId/vote",
+  authenticateJWT,
+  commentController.voteComment
+);
+
 export default postsRouter;

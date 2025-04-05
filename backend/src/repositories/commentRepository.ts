@@ -1,52 +1,120 @@
-import { pool } from "../config/db";
+import { PrismaClient, VoteType } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class CommentRepository {
   async createComment(postId: string, userId: string, content: string) {
-    const result = await pool.query(
-      `INSERT INTO "Comment" ("postId", "authorId", content, "createdAt")
-       VALUES ($1, $2, $3, NOW())
-       RETURNING 
-         id,
-         content,
-         "createdAt",
-         "authorId",
-         (SELECT name FROM "User" WHERE id = $2) as "authorName"`,
-      [postId, userId, content]
-    );
-    return result.rows[0];
+    return prisma.comment.create({
+      data: {
+        content,
+        postId: parseInt(postId),
+        authorId: parseInt(userId),
+      },
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
   }
 
   async getCommentsByPost(postId: string) {
-    const result = await pool.query(
-      `SELECT c.*, u.name as "authorName" 
-       FROM "Comment" c
-       JOIN "User" u ON c."authorId" = u.id
-       WHERE c."postId" = $1 
-       ORDER BY c."createdAt" DESC`,
-      [postId]
-    );
-    return result.rows;
+    return prisma.comment.findMany({
+      where: { postId: parseInt(postId) },
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
+        },
+        votes: {
+          select: {
+            voteType: true,
+            userId: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
   }
 
   async updateComment(commentId: string, userId: string, content: string) {
-    const result = await pool.query(
-      'UPDATE "Comment" SET content = $1 WHERE id = $2 AND "authorId" = $3 RETURNING *',
-      [content, commentId, userId]
-    );
-    return result.rows[0];
+    return prisma.comment.update({
+      where: {
+        id: parseInt(commentId),
+        authorId: parseInt(userId),
+      },
+      data: { content },
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
   }
 
   async deleteComment(commentId: string, userId: string, isAdmin: boolean) {
-    let query = 'DELETE FROM "Comment" WHERE id = $1';
-    const params: any[] = [commentId];
+    const whereClause: any = {
+      id: parseInt(commentId),
+    };
 
-    // Só verifica autor se não for admin
     if (!isAdmin) {
-      query += ' AND "authorId" = $2';
-      params.push(userId);
+      whereClause.authorId = parseInt(userId);
     }
 
-    const result = await pool.query(query + " RETURNING *", params);
-    return result.rowCount !== null && result.rowCount > 0;
+    const deletedComment = await prisma.comment.deleteMany({
+      where: whereClause,
+    });
+
+    return deletedComment.count > 0;
+  }
+
+  async handleVote(
+    commentId: number,
+    userId: number,
+    voteType: VoteType | null
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const existingVote = await tx.commentVote.findUnique({
+        where: { commentId_userId: { commentId, userId } },
+      });
+
+      if (existingVote) {
+        if (voteType === null) {
+          await tx.commentVote.delete({
+            where: { id: existingVote.id },
+          });
+        } else {
+          await tx.commentVote.update({
+            where: { id: existingVote.id },
+            data: { voteType },
+          });
+        }
+      } else if (voteType) {
+        await tx.commentVote.create({
+          data: { commentId, userId, voteType },
+        });
+      }
+
+      const updatedVotes = await tx.commentVote.findMany({
+        where: { commentId },
+        select: { voteType: true },
+      });
+
+      const newScore = updatedVotes.reduce((acc, vote) => {
+        return vote.voteType === "upvote" ? acc + 1 : acc - 1;
+      }, 0);
+
+      return {
+        newScore,
+        userVote: voteType,
+      };
+    });
   }
 }
