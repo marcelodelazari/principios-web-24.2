@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Configure a URL base correta do backend
 const api = axios.create({
-  baseURL: "http://localhost:3000", // Porta do backend
+  baseURL: process.env.REACT_APP_BACKEND_URL, // Porta do backend
 });
 
 // Adicione interceptor para incluir o token automaticamente
