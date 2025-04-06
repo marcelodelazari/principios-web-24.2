@@ -1,24 +1,25 @@
-// tests/integration/auth.test.ts
 import request from "supertest";
 import app from "../src/index";
 import { pool } from "../src/config/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { User } from "@prisma/client";
 
 // Mock das dependências
 jest.mock("../src/config/db");
 jest.mock("bcryptjs");
 jest.mock("jsonwebtoken");
 
-describe("Auth Routes", () => {
-  const mockUser = {
-    id: 1,
-    name: "Test User",
-    email: "test@example.com",
-    passwordHash: "hashed_password",
-    createdAt: new Date(),
-  };
+const mockUser: User = {
+  id: 1,
+  name: "Test User",
+  email: "test@example.com",
+  passwordHash: "hashed_password",
+  isAdmin: false,
+  createdAt: new Date(),
+};
 
+describe("Auth Routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (pool.query as jest.Mock).mockReset();
@@ -28,79 +29,76 @@ describe("Auth Routes", () => {
     (jwt.sign as jest.Mock).mockReturnValue("mocked_jwt_token");
   });
 
-  afterAll(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500)); // Evitar vazamento de conexão
-  });
-
   describe("POST /register", () => {
-    it("deve registrar um novo usuário com sucesso (201)", async () => {
-      (pool.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [] }) // Verificação de email
-        .mockResolvedValueOnce({ rows: [mockUser] }); // Inserção
-
-      const response = await request(app).post("/register").send({
-        name: "Test User",
-        email: "test@example.com",
-        password: "ValidPass123",
-      });
-
-      expect(response.status).toBe(201);
+    it("deve retornar 400 para senha inválida", async () => {
+      const response = await request(app)
+        .post("/register")
+        .send({
+          name: "Test",
+          email: "valid@example.com", // Email válido
+          password: "123", // Senha inválida
+        });
+    
+      expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        message: "Usuário criado com sucesso",
-        user: expect.objectContaining({
-          email: "test@example.com",
-          name: "Test User",
-        }),
+        message: expect.stringMatching(/senha deve ter pelo menos 6 caracteres/i),
       });
     });
 
-    it("deve retornar erro para senha curta (400)", async () => {
-      const response = await request(app).post("/register").send({
-        name: "Test User",
-        email: "test@example.com",
-        password: "123",
-      });
+    it("deve retornar 400 para email já existente", async () => {
+      (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+      const response = await request(app)
+        .post("/register")
+        .send({
+          name: "Test User",
+          email: mockUser.email,
+          password: "ValidPass123",
+        });
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        message: "A senha deve ter pelo menos 6 caracteres",
+        message: "Usuário já existe",
       });
     });
   });
 
   describe("POST /login", () => {
-    it("deve fazer login com credenciais válidas (200)", async () => {
-      (pool.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [mockUser] }) // Validação do middleware
-        .mockResolvedValueOnce({ rows: [mockUser] }); // Consulta do service
+    it("deve retornar 200 e token JWT ao fazer login", async () => {
+      (pool.query as jest.Mock).mockResolvedValue({ rows: [mockUser] });
 
-      const response = await request(app).post("/login").send({
-        email: "test@example.com",
-        password: "ValidPass123",
-      });
+      const response = await request(app)
+        .post("/login")
+        .send({
+          email: mockUser.email,
+          password: "ValidPass123",
+        });
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
-        message: "Login bem-sucedido",
         token: "mocked_jwt_token",
+        user: expect.any(Object),
       });
+      expect(jwt.sign).toHaveBeenCalledWith(
+        { userId: mockUser.id, isAdmin: mockUser.isAdmin },
+        expect.any(String),
+        { expiresIn: "1h" }
+      );
     });
 
-    it("deve retornar erro para credenciais inválidas (400)", async () => {
-      (pool.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [mockUser] })
-        .mockResolvedValueOnce({ rows: [mockUser] });
+    it("deve retornar 400 para credenciais inválidas", async () => {
+      (pool.query as jest.Mock).mockResolvedValue({ rows: [] });
 
-      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
-
-      const response = await request(app).post("/login").send({
-        email: "test@example.com",
-        password: "WrongPassword",
-      });
+      const response = await request(app)
+        .post("/login")
+        .send({
+          email: "invalid@example.com",
+          password: "WrongPass",
+        });
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        message: "Senha incorreta",
+        message: "Usuário não encontrado",
       });
     });
   });

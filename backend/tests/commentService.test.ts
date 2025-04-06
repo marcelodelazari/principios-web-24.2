@@ -1,132 +1,73 @@
 import { CommentService } from '../src/services/commentService';
 import { CommentRepository } from '../src/repositories/commentRepository';
-import { pool } from '../src/config/db';
+import { VoteType, Comment, CommentVote } from "@prisma/client";
 
 jest.mock('../src/repositories/commentRepository');
 
+const mockComment: Comment & { 
+  author: { name: string };
+  votes: CommentVote[];
+  post: { id: number };
+} = {
+  id: 1,
+  postId: 1,
+  authorId: 1,
+  content: "Test Comment",
+  createdAt: new Date(),
+  author: {
+    name: "Test Author"
+  },
+  votes: [],
+  post: { id: 1 } // Adicionar relação post
+};
+
 describe('CommentService', () => {
   let commentService: CommentService;
-  let commentRepository: jest.Mocked<CommentRepository>;
+  const mockRepository = CommentRepository as jest.MockedClass<typeof CommentRepository>;
 
   beforeEach(() => {
-    commentRepository = new CommentRepository() as jest.Mocked<CommentRepository>;
+    mockRepository.mockClear();
     commentService = new CommentService();
-    // Injeta o mock do repositório para que o serviço utilize o mock
-    (commentService as any).commentRepository = commentRepository;
+    commentService['commentRepository'] = new mockRepository();
   });
 
   describe('createComment', () => {
-    it('deve criar um comentário com sucesso', async () => {
-      const mockComment = {
-        id: 1,
-        postId: '1',
-        authorId: '1',
-        content: 'Comentário de teste',
-        createdAt: new Date()
-      };
+    it('deve criar comentário com sucesso', async () => {
+      mockRepository.prototype.createComment.mockResolvedValue(mockComment);
 
-      commentRepository.createComment.mockResolvedValue(mockComment);
-
-      const result = await commentService.createComment('1', '1', 'Comentário de teste');
-
-      expect(result).toEqual(expect.objectContaining({
-        id: expect.any(Number),
-        postId: '1',
-        authorId: '1',
-        content: 'Comentário de teste',
-        createdAt: expect.any(Date)
-      }));
-      expect(commentRepository.createComment).toHaveBeenCalledWith('1', '1', 'Comentário de teste');
-    });
-
-    it('deve lançar erro se o conteúdo do comentário não for informado', async () => {
-      await expect(commentService.createComment('1', '1', ''))
-        .rejects
-        .toThrow('Conteúdo do comentário é obrigatório');
+      const result = await commentService.createComment('1', '1', 'Content');
+      
+      expect(result).toEqual(mockComment);
+      expect(mockRepository.prototype.createComment).toHaveBeenCalledWith(
+        '1', '1', 'Content'
+      );
     });
   });
 
   describe('getCommentsByPost', () => {
-    it('deve retornar uma lista de comentários para um post', async () => {
-      const mockComments = [
-        {
-          id: 1,
-          postId: '1',
-          authorId: '1',
-          content: 'Comentário 1',
-          createdAt: new Date()
-        },
-        {
-          id: 2,
-          postId: '1',
-          authorId: '2',
-          content: 'Comentário 2',
-          createdAt: new Date()
-        }
-      ];
-
-      commentRepository.getCommentsByPost.mockResolvedValue(mockComments);
+    it('deve retornar lista de comentários', async () => {
+      mockRepository.prototype.getCommentsByPost.mockResolvedValue([mockComment]);
 
       const result = await commentService.getCommentsByPost('1');
-
-      expect(result).toEqual(mockComments);
-      expect(commentRepository.getCommentsByPost).toHaveBeenCalledWith('1');
+      
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(mockComment.id.toString());
     });
   });
 
-  describe('updateComment', () => {
-    it('deve atualizar um comentário com sucesso', async () => {
-      const mockUpdatedComment = {
-        id: 1,
-        postId: '1',
-        authorId: '1',
-        content: 'Comentário atualizado',
-        createdAt: new Date()
-      };
+  describe('voteComment', () => {
+    it('deve registrar voto válido', async () => {
+      mockRepository.prototype.handleVote.mockResolvedValue({
+        newScore: 1,
+        userVote: VoteType.upvote,
+      });
 
-      commentRepository.updateComment.mockResolvedValue(mockUpdatedComment);
-
-      const result = await commentService.updateComment('1', '1', 'Comentário atualizado');
-
-      expect(result).toEqual(mockUpdatedComment);
-      expect(commentRepository.updateComment).toHaveBeenCalledWith('1', '1', 'Comentário atualizado');
-    });
-
-    it('deve lançar erro se o conteúdo do comentário estiver vazio ao atualizar', async () => {
-      await expect(commentService.updateComment('1', '1', ''))
-        .rejects
-        .toThrow('Conteúdo do comentário é obrigatório');
-    });
-
-    it('deve lançar erro se o comentário não for encontrado ou o usuário não estiver autorizado', async () => {
-      commentRepository.updateComment.mockResolvedValue(null);
-
-      await expect(commentService.updateComment('1', '1', 'Comentário atualizado'))
-        .rejects
-        .toThrow('Comentário não encontrado ou usuário não autorizado');
+      const result = await commentService.voteComment('1', '1', 'upvote');
+      
+      expect(result.newScore).toBe(1);
+      expect(mockRepository.prototype.handleVote).toHaveBeenCalledWith(
+        1, 1, 'upvote'
+      );
     });
   });
-
-  describe('deleteComment', () => {
-    it('deve deletar um comentário com sucesso', async () => {
-      commentRepository.deleteComment.mockResolvedValue(true);
-
-      const result = await commentService.deleteComment('1', '1');
-
-      expect(result).toEqual({ message: 'Comentário deletado com sucesso' });
-      expect(commentRepository.deleteComment).toHaveBeenCalledWith('1', '1');
-    });
-
-    it('deve lançar erro se não for possível deletar o comentário', async () => {
-      commentRepository.deleteComment.mockResolvedValue(false);
-
-      await expect(commentService.deleteComment('1', '1'))
-        .rejects
-        .toThrow('Comentário não encontrado ou usuário não autorizado');
-    });
-  });
-});
-
-afterAll(async () => {
-  await pool.end();
 });

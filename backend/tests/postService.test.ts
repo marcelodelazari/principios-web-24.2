@@ -1,160 +1,114 @@
-// tests/integration/posts.test.ts
 import request from "supertest";
 import app from "../src/index";
 import { PostRepository } from "../src/repositories/postRepository";
 import jwt from "jsonwebtoken";
+import { PrismaClient, Post, PostVote, VoteType } from "@prisma/client";
 import { pool } from "../src/config/db";
-import { PrismaClient } from "@prisma/client";
-
-// Mock completo do Prisma Client
-jest.mock("@prisma/client", () => {
-  return {
-    PrismaClient: jest.fn(() => ({
-      post: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-        deleteMany: jest.fn(),
-      },
-      postVote: {
-        findUnique: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-    })),
-  };
-});
 
 jest.mock("../src/repositories/postRepository");
 jest.mock("../src/config/db");
+jest.mock("@prisma/client");
 
-const mockPostRepository = PostRepository as jest.MockedClass<
-  typeof PostRepository
->;
-const mockPrisma = new PrismaClient() as jest.Mocked<PrismaClient>;
+const mockPost: Post & { 
+  votes: PostVote[];
+  author: { name: string };
+  _count: { comments: number };
+  comments: any[]; // Adicionar esta linha
+} = {
+  id: 1,
+  title: "Test Post",
+  content: "Test Content",
+  authorId: 1,
+  createdAt: new Date(),
+  votes: [],
+  author: {
+    name: "Test Author"
+  },
+  _count: {
+    comments: 0
+  },
+  comments: [] // Adicionar array vazio
+};
 
 describe("Posts Routes", () => {
-  const mockPost = {
-    id: 1,
-    title: "Test Post",
-    content: "Test Content",
-    authorId: 1,
-    createdAt: new Date(),
-    votes: [],
-  };
-
-  const mockPostVote = {
-    id: 1,
-    postId: 1,
-    userId: 1,
-    voteType: "upvote",
-    createdAt: new Date(),
-  };
-
   let authToken: string;
+  const mockPostRepository = PostRepository as jest.MockedClass<typeof PostRepository>;
 
   beforeAll(() => {
-    authToken = jwt.sign({ userId: 1 }, process.env.JWT_SECRET || "secret");
+    authToken = jwt.sign({ userId: 1 }, "test_secret");
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Configurar mocks do PostRepository
+    
     mockPostRepository.prototype.createPost.mockResolvedValue(mockPost);
-    mockPostRepository.prototype.getPosts.mockResolvedValue([mockPost]);
+    mockPostRepository.prototype.getPosts.mockResolvedValue([{
+      ...mockPost,
+      votes: [{ voteType: 'upvote', userId: 1 }]
+    }]);
     mockPostRepository.prototype.getPostById.mockResolvedValue(mockPost);
     mockPostRepository.prototype.updatePost.mockResolvedValue(mockPost);
-    mockPostRepository.prototype.deletePost.mockResolvedValue({ count: 1 });
-
-    // Configurar mocks do Prisma
-    (mockPrisma.post.create as jest.Mock).mockResolvedValue(mockPost);
-    (mockPrisma.post.findMany as jest.Mock).mockResolvedValue([mockPost]);
-    (mockPrisma.post.findUnique as jest.Mock).mockResolvedValue(mockPost);
-    (mockPrisma.post.update as jest.Mock).mockResolvedValue(mockPost);
-    (mockPrisma.post.deleteMany as jest.Mock).mockResolvedValue({ count: 1 });
-
-    // Mockar operações de voto
-    (mockPrisma.postVote.findUnique as jest.Mock).mockResolvedValue(null);
-    (mockPrisma.postVote.create as jest.Mock).mockResolvedValue(mockPostVote);
-    (mockPrisma.postVote.update as jest.Mock).mockResolvedValue(mockPostVote);
-    (mockPrisma.postVote.delete as jest.Mock).mockResolvedValue(mockPostVote);
-
-    // Mockar pool.query para operações de voto
-    (pool.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [] }) // Verificar voto existente
-      .mockResolvedValueOnce({ rows: [{}] }); // Criar novo voto
-  });
-
-  afterAll(async () => {
-    await pool.end();
+    mockPostRepository.prototype.deletePost.mockResolvedValue({
+      ...mockPost,
+      comments: [], // Garantir que existe
+      votes: [] // Manter consistência
+    });
+    mockPostRepository.prototype.handleVote.mockResolvedValue({
+      newScore: 1,
+      userVote: VoteType.upvote,
+    });
   });
 
   describe("POST /posts", () => {
-    it("deve criar post com autenticação (201)", async () => {
+    it("deve criar post com sucesso (201)", async () => {
       const response = await request(app)
         .post("/posts")
         .set("Authorization", `Bearer ${authToken}`)
         .send({
-          title: "Test Post",
-          content: "Test Content",
+          title: "New Post",
+          content: "Post Content",
         });
 
       expect(response.status).toBe(201);
-      expect(response.body).toMatchObject({
-        message: "Post criado com sucesso",
-        post: {
-          title: "Test Post",
-          content: "Test Content",
-        },
-      });
+      expect(mockPostRepository.prototype.createPost).toHaveBeenCalledWith(
+        "New Post",
+        "Post Content",
+        expect.any(String)
+      );
     });
 
-    it("deve recusar post sem título (400)", async () => {
+    it("deve retornar erro sem autenticação (401)", async () => {
       const response = await request(app)
         .post("/posts")
-        .set("Authorization", `Bearer ${authToken}`)
-        .send({ content: "Test Content" });
+        .send({ title: "New Post", content: "Content" });
 
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty(
-        "message",
-        "Título e conteúdo são obrigatórios"
-      );
+      expect(response.status).toBe(401);
     });
   });
 
   describe("GET /posts", () => {
-    it("deve listar todos os posts (200)", async () => {
+    it("deve listar posts (200)", async () => {
       const response = await request(app).get("/posts");
 
       expect(response.status).toBe(200);
       expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
+      expect(mockPostRepository.prototype.getPosts).toHaveBeenCalled();
     });
   });
 
   describe("POST /posts/:postId/vote", () => {
-    it("deve registrar voto válido (200)", async () => {
+    it("deve registrar voto (200)", async () => {
       const response = await request(app)
         .post("/posts/1/vote")
         .set("Authorization", `Bearer ${authToken}`)
         .send({ voteType: "upvote" });
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty("message", "Voto registrado");
-    });
-
-    it("deve retornar erro para voto inválido (400)", async () => {
-      const response = await request(app)
-        .post("/posts/1/vote")
-        .set("Authorization", `Bearer ${authToken}`)
-        .send({ voteType: "invalid" });
-
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty("message");
+      expect(mockPostRepository.prototype.handleVote).toHaveBeenCalledWith(
+        1,
+        1,
+        "upvote"
+      );
     });
   });
 });

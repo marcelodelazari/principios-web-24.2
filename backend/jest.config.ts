@@ -1,11 +1,12 @@
 export default {
   preset: "ts-jest",
   testEnvironment: "node",
-  moduleFileExtensions: ["ts", "js"],
+  moduleFileExtensions: ["ts", "js", "json"],
   transform: {
     "^.+\\.ts$": "ts-jest",
   },
   moduleNameMapper: {
-    "^(\\.{1,2}/.*)\\.ts$": "$1",
+    "^@/(.*)$": "<rootDir>/src/$1",
   },
+  setupFilesAfterEnv: ["./tests/setup.ts"],
 };
