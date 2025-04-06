@@ -84,15 +84,22 @@ export const deleteComment = async (postId: string, commentId: string) => {
 };
 
 // Adicione estas funções
-export const voteComment = async (
-  commentId: string,
-  voteType: string | null
-) => {
-  const response = await api.post(`/comments/${commentId}/vote`, { voteType });
+// api.ts - corrigir as funções de votação
+export const votePost = async (postId: string, voteType: string | null) => {
+  const response = await api.post(`/posts/${postId}/vote`, { voteType });
   return response.data;
 };
 
+export const voteComment = async (postId: string, commentId: string, voteType: string | null) => {
+  const response = await api.post(`/posts/${postId}/comments/${commentId}/vote`, { voteType });
+  return response.data;
+};
 export const updatePost = async (postId: string, title: string, content: string) => {
   const response = await api.put(`/posts/${postId}`, { title, content });
+  return response.data;
+};
+
+export const createPost = async (title: string, content: string) => {
+  const response = await api.post("/posts", { title, content });
   return response.data;
 };

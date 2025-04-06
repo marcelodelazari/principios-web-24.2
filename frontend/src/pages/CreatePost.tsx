@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, TextField, Button, Typography, Box } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
+import { createPost } from "../services/api";
 import axios from "axios";
 
 export default function CreatePost() {
@@ -20,19 +21,7 @@ export default function CreatePost() {
     }
 
     try {
-      await axios.post(
-        "/posts",
-        {
-          title,
-          content,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
+      await createPost(title, content); // usa a função criada
       navigate("/");
     } catch (err: any) {
       setError(err.response?.data?.message || "Erro ao criar post");

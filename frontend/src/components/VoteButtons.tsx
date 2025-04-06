@@ -3,6 +3,7 @@ import { IconButton, Typography, Box, Tooltip } from "@mui/material";
 import { ArrowUpward, ArrowDownward } from "@mui/icons-material";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
+import { voteComment, votePost } from "../services/api";
 
 interface VoteButtonsProps {
   targetId: string;
@@ -60,57 +61,48 @@ export default function VoteButtons({
   const handleVote = useCallback(
     async (voteType: "upvote" | "downvote" | null) => {
       if (!user) return;
-
+  
       const previousVote = userVote;
       const newVote = userVote === voteType ? null : voteType;
-
+  
       try {
         // Atualização otimista
         const optimisticScore = calculateNewScore(score, previousVote, newVote);
         setUserVote(newVote);
         setScore(optimisticScore);
         setError(null);
-
-        // Endpoint dinâmico
-        const endpoint =
-          type === "post"
-            ? `/posts/${targetId}/vote`
-            : `/comments/${targetId}/vote`;
-
+  
+        // Chamada à API
         let response;
         if (type === "post") {
-          response = await axios.post<VoteResponse>(
-            `/posts/${targetId}/vote`,
-            { voteType: newVote },
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
+          response = await votePost(targetId, newVote);
         } else {
-          // Para comentários, precisamos do postId também
-          const postId = window.location.pathname.split("/")[2]; // Extrai o postId da URL
-          response = await axios.post<VoteResponse>(
-            `/posts/${postId}/comments/${targetId}/vote`,
-            { voteType: newVote },
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
+          // Extrai o postId da URL (ex: "/posts/123" -> "123")
+          const postId = window.location.pathname.split("/")[2];
+          if (!postId) {
+            throw new Error("Não foi possível determinar o post associado ao comentário");
+          }
+          response = await voteComment(postId, targetId, newVote);
         }
-
-        setScore(response.data.newScore);
-        setUserVote(response.data.userVote);
-
-        // Notificar componente pai
+  
+        // Atualiza com os dados reais da API
+        setScore(response.newScore);
+        setUserVote(response.userVote);
+  
+        // Notifica o componente pai se necessário
         if (onVoteUpdate) {
-          onVoteUpdate(response.data.newScore, response.data.userVote);
+          onVoteUpdate(response.newScore, response.userVote);
         }
       } catch (error) {
-        // ... mantido o código existente ...
+        // Reverte em caso de erro
+        setUserVote(previousVote);
+        setScore(score);
+        
+        setError(
+          axios.isAxiosError(error) 
+            ? error.response?.data.message || "Erro ao atualizar voto"
+            : "Erro inesperado ao atualizar voto"
+        );
       }
     },
     [user, userVote, score, targetId, type, calculateNewScore, onVoteUpdate]

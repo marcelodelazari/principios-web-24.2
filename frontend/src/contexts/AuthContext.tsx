@@ -5,7 +5,7 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-import axios from "axios";
+import { getCurrentUser } from "../services/api";
 
 interface User {
   id: number;
@@ -29,26 +29,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuth = async () => {
       const token = localStorage.getItem("token");
       if (token) {
-        try {
-          const response = await axios.get("http://localhost:3000/users/me", {
-            // URL completa
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          // Verifique a estrutura da resposta do seu backend
-          if (response.data && response.data.id) {
-            setUser({
-              id: response.data.id,
-              name: response.data.name,
-              email: response.data.email,
-              isAdmin: response.data.isAdmin, // Adicionado
-            });
-          } else {
-            logout();
-          }
-        } catch (error) {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+        } else {
           logout();
         }
       }
