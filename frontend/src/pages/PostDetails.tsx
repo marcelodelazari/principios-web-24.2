@@ -15,10 +15,15 @@ import {
   Toolbar,
   Stack,
   useMediaQuery,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Chip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import { useAuth } from "../contexts/AuthContext";
@@ -31,6 +36,7 @@ import {
   createComment,
   deleteComment,
   deletePost,
+  updatePost,
 } from "../services/api";
 import { colors } from "../theme/colors";
 
@@ -39,6 +45,7 @@ interface Post {
   title: string;
   content: string;
   author: { name: string };
+  authorId: string;
   createdAt: string;
   votes: Array<{
     voteType: "upvote" | "downvote";
@@ -280,6 +287,11 @@ export default function PostDetails(): ReactElement {
   const theme = useTheme();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  
+  // Estado para controlar o diálogo de edição
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -307,6 +319,10 @@ export default function PostDetails(): ReactElement {
 
         setPost(processedPost);
         setComments(processedComments);
+        
+        // Inicializar campos de edição com os dados atuais do post
+        setEditTitle(processedPost.title);
+        setEditContent(processedPost.content);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -327,6 +343,43 @@ export default function PostDetails(): ReactElement {
       }
     }
   }, [post, navigate]);
+  
+  // Função para abrir o diálogo de edição
+  const handleOpenEditDialog = useCallback(() => {
+    if (!post) return;
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setEditDialogOpen(true);
+  }, [post]);
+  
+  // Função para fechar o diálogo de edição
+  const handleCloseEditDialog = useCallback(() => {
+    setEditDialogOpen(false);
+  }, []);
+  
+  // Função para salvar as alterações do post
+  const handleSaveEdit = useCallback(async () => {
+    if (!post || !postId) return;
+    
+    try {
+      const response = await updatePost(postId, editTitle, editContent);
+      
+      // Atualizar o post na interface
+      setPost(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          title: editTitle,
+          content: editContent
+        };
+      });
+      
+      setEditDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating post:", error);
+      alert("Erro ao atualizar o post. Tente novamente.");
+    }
+  }, [post, postId, editTitle, editContent]);
 
   const handleCommentSubmit = useCallback(
     async (content: string) => {
@@ -373,6 +426,9 @@ export default function PostDetails(): ReactElement {
 
   if (loading) return <Typography>Carregando...</Typography>;
   if (!post) return <Typography>Post não encontrado</Typography>;
+
+  // Verificar se o usuário atual é o autor do post
+  const isPostAuthor = user && user.id.toString() === post.authorId;
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: colors.background.default }}>
@@ -543,17 +599,32 @@ export default function PostDetails(): ReactElement {
                 {post.content}
               </Typography>
 
-              {user?.isAdmin && (
-                <Button
-                  onClick={handleDeletePost}
-                  startIcon={<DeleteIcon />}
-                  color="error"
-                  size="small"
-                  sx={{ ml: 2 }}
-                >
-                  Deletar Post
-                </Button>
-              )}
+              <Box sx={{ display: "flex", mt: 2 }}>
+                {/* Botão de editar (só aparece se o usuário for o autor) */}
+                {isPostAuthor && (
+                  <Button
+                    onClick={handleOpenEditDialog}
+                    startIcon={<EditIcon />}
+                    color="primary"
+                    size="small"
+                    sx={{ mr: 2 }}
+                  >
+                    Editar Post
+                  </Button>
+                )}
+                
+                {/* Botão de deletar (só aparece para o autor ou admin) */}
+                {(isPostAuthor || user?.isAdmin) && (
+                  <Button
+                    onClick={handleDeletePost}
+                    startIcon={<DeleteIcon />}
+                    color="error"
+                    size="small"
+                  >
+                    Deletar Post
+                  </Button>
+                )}
+              </Box>
 
               <Box
                 sx={{
@@ -574,9 +645,17 @@ export default function PostDetails(): ReactElement {
                 >
                   {post.author.name[0]}
                 </Avatar>
-                <Typography variant="caption" color="text.secondary">
-                  Postado por {post.author.name}
-                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                          {post.author.name}
+                        </Typography>
+                        {isPostAuthor && (
+                          <Chip
+                            label="Seu post"
+                            size="small"
+                            color="success"
+                            sx={{ borderRadius: 1, fontWeight: 500 }}
+                          />
+                        )}
                 <Typography variant="caption">•</Typography>
                 <Typography variant="caption" color="text.secondary">
                   {formatDistanceToNow(new Date(post.createdAt), {
@@ -614,6 +693,43 @@ export default function PostDetails(): ReactElement {
           ))}
         </Box>
       </Container>
+      
+      {/* Diálogo de Edição */}
+      <Dialog 
+        open={editDialogOpen} 
+        onClose={handleCloseEditDialog}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>Editar Post</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Título"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Conteúdo"
+            multiline
+            rows={8}
+            fullWidth
+            variant="outlined"
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditDialog} color="inherit">Cancelar</Button>
+          <Button onClick={handleSaveEdit} color="primary" variant="contained">Salvar Alterações</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
