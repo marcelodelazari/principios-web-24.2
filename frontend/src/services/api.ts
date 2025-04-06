@@ -33,7 +33,7 @@ export const registerUser = async (userData: {
   email: string;
   password: string;
 }) => {
-  const response = await axios.post("/register", userData);
+  const response = await api.post("/register", userData);
   return response.data;
 };
 export const getCurrentUser = async () => {
