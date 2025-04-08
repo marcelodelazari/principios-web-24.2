@@ -23,6 +23,7 @@ import { getPosts, deletePost } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import VoteButtons from "../components/VoteButtons";
 import { colors } from "../theme/colors";
+import NavBar from "../components/NavBar";
 
 interface Post {
   id: string;
@@ -73,101 +74,7 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: colors.background.default }}>
-      <AppBar
-        position="sticky"
-        sx={{
-          backgroundColor: colors.primary.main,
-          boxShadow: "none",
-          borderBottom: `1px solid ${colors.primary.dark}`,
-        }}
-      >
-        <Toolbar sx={{ py: 1 }}>
-          <Box
-            sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 2 }}
-          >
-            <Typography
-              variant="h4"
-              component={Link}
-              to="/"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: "-1px",
-                color: colors.text.contrast,
-                textDecoration: "none",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              TechForum
-            </Typography>
-          </Box>
-
-          <Stack direction="row" spacing={2} alignItems="center">
-            {user && (
-              <Button
-                component={Link}
-                to="/create-post"
-                variant="contained"
-                color="secondary"
-                startIcon={<AddIcon />}
-                sx={{
-                  borderRadius: 1,
-                  px: 3,
-                  py: 1,
-                  textTransform: "none",
-                  bgcolor: colors.primary.dark,
-                  "&:hover": { bgcolor: colors.primary.light },
-                }}
-              >
-                Novo Post
-              </Button>
-            )}
-            {user ? (
-              <Button
-                onClick={logout}
-                variant="outlined"
-                color="inherit"
-                startIcon={<ExitToAppIcon />}
-                sx={{
-                  borderColor: colors.text.contrast,
-                  color: colors.text.contrast,
-                  "&:hover": { borderColor: colors.secondary.light },
-                }}
-              >
-                Sair
-              </Button>
-            ) : (
-              <Stack direction="row" spacing={1}>
-                <Button
-                  component={Link}
-                  to="/login"
-                  variant="outlined"
-                  color="inherit"
-                  sx={{
-                    borderColor: colors.text.contrast,
-                    color: colors.text.contrast,
-                    "&:hover": { borderColor: colors.secondary.light },
-                  }}
-                >
-                  Entrar
-                </Button>
-                <Button
-                  component={Link}
-                  to="/register"
-                  variant="contained"
-                  color="secondary"
-                  sx={{
-                    bgcolor: colors.primary.dark,
-                    "&:hover": { bgcolor: colors.primary.light },
-                  }}
-                >
-                  Registrar
-                </Button>
-              </Stack>
-            )}
-          </Stack>
-        </Toolbar>
-      </AppBar>
-
+      <NavBar></NavBar>
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Box sx={{ mb: 4 }}>
           <Typography
