@@ -24,21 +24,7 @@ import { useAuth } from "../contexts/AuthContext";
 import VoteButtons from "../components/VoteButtons";
 import { colors } from "../theme/colors";
 import NavBar from "../components/NavBar";
-
-interface Post {
-  id: string;
-  title: string;
-  content: string;
-  author: { name: string };
-  createdAt: string;
-  votes: Array<{
-    voteType: "upvote" | "downvote";
-    userId: number;
-  }>;
-  score: number;
-  commentsCount: number;
-  userVote?: "upvote" | "downvote" | null;
-}
+import { Post } from "../models";
 
 export default function Dashboard() {
   const [posts, setPosts] = useState<Post[]>([]);

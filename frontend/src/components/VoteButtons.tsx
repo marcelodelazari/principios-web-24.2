@@ -1,24 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+// frontend/src/components/VoteButtons.tsx
+
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { IconButton, Typography, Box, Tooltip } from "@mui/material";
 import { ArrowUpward, ArrowDownward } from "@mui/icons-material";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { voteComment, votePost } from "../services/api";
+import { useNotification } from "../contexts/NotificationContext";
+import { VoteType } from "../models";
 
 interface VoteButtonsProps {
   targetId: string;
   type: "post" | "comment";
   initialScore: number;
-  initialVote?: "upvote" | "downvote" | null;
-  onVoteUpdate?: (
-    newScore: number,
-    newVote: "upvote" | "downvote" | null
-  ) => void;
-}
-
-interface VoteResponse {
-  newScore: number;
-  userVote: "upvote" | "downvote" | null;
+  initialVote?: VoteType;
+  onVoteUpdate?: (newScore: number, newVote: VoteType) => void;
+  postId?: string;
 }
 
 export default function VoteButtons({
@@ -27,25 +24,26 @@ export default function VoteButtons({
   initialScore,
   initialVote,
   onVoteUpdate,
+  postId,
 }: VoteButtonsProps) {
   const [score, setScore] = useState(initialScore);
-  const [userVote, setUserVote] = useState(initialVote);
-  const [error, setError] = useState<string | null>(null);
+  const [userVote, setUserVote] = useState<VoteType>(initialVote || null);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const { showNotification } = useNotification();
 
   // Sincroniza com props externas
-  // frontend/src/components/VoteButtons.tsx
   useEffect(() => {
     setScore(initialScore);
-    setUserVote(initialVote);
+    setUserVote(initialVote || null);
   }, [initialScore, initialVote]);
 
   const calculateNewScore = useCallback(
     (
       currentScore: number,
-      currentVote: typeof userVote,
-      newVote: typeof userVote
-    ) => {
+      currentVote: VoteType,
+      newVote: VoteType
+    ): number => {
       let change = 0;
 
       if (currentVote === "upvote" && newVote !== "upvote") change -= 1;
@@ -59,36 +57,44 @@ export default function VoteButtons({
   );
 
   const handleVote = useCallback(
-    async (voteType: "upvote" | "downvote" | null) => {
-      if (!user) return;
-  
+    async (voteType: VoteType) => {
+      if (!user) {
+        showNotification("Você precisa estar logado para votar", "warning");
+        return;
+      }
+
+      if (isLoading) return;
+      setIsLoading(true);
+
       const previousVote = userVote;
       const newVote = userVote === voteType ? null : voteType;
-  
+
       try {
         // Atualização otimista
         const optimisticScore = calculateNewScore(score, previousVote, newVote);
         setUserVote(newVote);
         setScore(optimisticScore);
-        setError(null);
-  
+
         // Chamada à API
         let response;
         if (type === "post") {
           response = await votePost(targetId, newVote);
         } else {
-          // Extrai o postId da URL (ex: "/posts/123" -> "123")
-          const postId = window.location.pathname.split("/")[2];
-          if (!postId) {
-            throw new Error("Não foi possível determinar o post associado ao comentário");
+          // Verificar se temos o postId necessário
+          const effectivePostId =
+            postId || window.location.pathname.split("/")[2];
+          if (!effectivePostId) {
+            throw new Error(
+              "Não foi possível determinar o post associado ao comentário"
+            );
           }
-          response = await voteComment(postId, targetId, newVote);
+          response = await voteComment(effectivePostId, targetId, newVote);
         }
-  
+
         // Atualiza com os dados reais da API
         setScore(response.newScore);
         setUserVote(response.userVote);
-  
+
         // Notifica o componente pai se necessário
         if (onVoteUpdate) {
           onVoteUpdate(response.newScore, response.userVote);
@@ -96,23 +102,39 @@ export default function VoteButtons({
       } catch (error) {
         // Reverte em caso de erro
         setUserVote(previousVote);
-        setScore(score);
-        
-        setError(
-          axios.isAxiosError(error) 
-            ? error.response?.data.message || "Erro ao atualizar voto"
-            : "Erro inesperado ao atualizar voto"
-        );
+        setScore(initialScore);
+
+        const errorMessage = axios.isAxiosError(error)
+          ? error.response?.data.message || "Erro ao atualizar voto"
+          : "Erro inesperado ao atualizar voto";
+
+        showNotification(errorMessage, "error");
+      } finally {
+        setIsLoading(false);
       }
     },
-    [user, userVote, score, targetId, type, calculateNewScore, onVoteUpdate]
+    [
+      user,
+      userVote,
+      score,
+      targetId,
+      type,
+      calculateNewScore,
+      onVoteUpdate,
+      initialScore,
+      isLoading,
+      showNotification,
+      postId,
+    ]
   );
 
-  const handleUpvote = useCallback(() => handleVote("upvote"), [handleVote]);
-  const handleDownvote = useCallback(
-    () => handleVote("downvote"),
-    [handleVote]
-  );
+  const upvoteAriaLabel = useMemo(() => {
+    return user ? `Votar positivamente` : "Faça login para votar";
+  }, [user]);
+
+  const downvoteAriaLabel = useMemo(() => {
+    return user ? `Votar negativamente` : "Faça login para votar";
+  }, [user]);
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -120,16 +142,16 @@ export default function VoteButtons({
         <span>
           <IconButton
             color={userVote === "upvote" ? "primary" : "default"}
-            onClick={handleUpvote}
-            disabled={!user}
-            aria-label="Upvote"
+            onClick={() => handleVote("upvote")}
+            disabled={!user || isLoading}
+            aria-label={upvoteAriaLabel}
           >
             <ArrowUpward />
           </IconButton>
         </span>
       </Tooltip>
 
-      <Typography variant="body2" fontWeight={500}>
+      <Typography variant="body2" fontWeight={500} aria-live="polite">
         {score}
       </Typography>
 
@@ -137,20 +159,14 @@ export default function VoteButtons({
         <span>
           <IconButton
             color={userVote === "downvote" ? "error" : "default"}
-            onClick={handleDownvote}
-            disabled={!user}
-            aria-label="Downvote"
+            onClick={() => handleVote("downvote")}
+            disabled={!user || isLoading}
+            aria-label={downvoteAriaLabel}
           >
             <ArrowDownward />
           </IconButton>
         </span>
       </Tooltip>
-
-      {error && (
-        <Typography color="error" variant="caption" display="block">
-          {error}
-        </Typography>
-      )}
     </Box>
   );
 }
