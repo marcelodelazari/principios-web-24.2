@@ -12,7 +12,7 @@ import {
 
 // Configure a URL base correta do backend
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001", // Porta padrão caso env não esteja definido
+  baseURL: process.env.REACT_APP_BACKEND_URL || "http://localhost:3001", // Porta padrão caso env não esteja definido
   timeout: 10000, // Timeout para evitar requisições pendentes por muito tempo
 });
 
