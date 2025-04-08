@@ -179,18 +179,21 @@ export default function PostDetails(): ReactElement {
       try {
         const response = await createComment(postId, content);
 
-        const completeComment = {
-          ...response,
-          id: response.id.toString(),
-          authorId: user.id.toString(),
-          authorName: user.name,
-          createdAt: new Date(response.createdAt).toISOString(),
-          score: 0,
-          userVote: null,
-          votes: [],
-        };
+        // Consultar a API novamente para obter todos os comentários atualizados
+        const updatedComments = await getCommentsByPost(postId);
 
-        setComments((prev) => [completeComment, ...prev]);
+        // Atualizar com os dados completos da API
+        setComments(
+          updatedComments.map((comment: any) => ({
+            ...comment,
+            id: comment.id.toString(),
+            authorId: comment.authorId.toString(),
+            createdAt: new Date(comment.createdAt).toISOString(),
+            score: comment.score,
+            userVote: comment.userVote || null,
+          }))
+        );
+
         if (post) {
           setPost((prev) =>
             prev ? { ...prev, commentsCount: prev.commentsCount + 1 } : null
