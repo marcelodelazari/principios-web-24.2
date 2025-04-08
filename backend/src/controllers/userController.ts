@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/userService";
+import { supabase } from "../config/supabase";
 
 declare global {
   namespace Express {
@@ -79,8 +80,7 @@ export class UserController {
         id: user.id,
         name: user.name,
         email: user.email,
-        isAdmin: user.isAdmin,
-        avatarUrl: user.avatarUrl, // Certifique-se de incluir avatarUrl
+        isAdmin: user.isAdmin, // Adicionado
         createdAt: user.createdAt,
       });
     } catch (error: any) {
@@ -117,24 +117,46 @@ export class UserController {
       const userId = parseInt(req.params.userId);
 
       if (req.userId !== userId) {
-        res.status(403).json({ message: "Não autorizado" });
+        return res.status(403).json({ message: "Não autorizado" });
       }
 
       if (!req.file) {
-        res.status(400).json({ message: "Nenhum arquivo enviado" });
+        return res.status(400).json({ message: "Nenhum arquivo enviado" });
       }
 
-      const avatarUrl = req.file
-        ? `/uploads/avatars/${req.file.filename}`
-        : null;
+      const file = req.file;
+      const fileName = `avatars/${userId}-${Date.now()}-${file.originalname}`;
 
-      if (!avatarUrl) {
-        res.status(400).json({ message: "Nenhum arquivo enviado" });
-        return;
+      // Upload para o Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+          upsert: true,
+        });
+
+      if (error) {
+        console.error("Erro ao fazer upload para o Supabase:", error);
+        return res.status(500).json({ message: "Erro ao salvar avatar" });
       }
+
+      // Obter a URL pública do arquivo
+      const { data: publicUrlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      if (!publicUrlData) {
+        return res
+          .status(500)
+          .json({ message: "Erro ao obter URL pública do avatar" });
+      }
+
+      const publicUrl = publicUrlData.publicUrl;
+
+      // Atualizar o avatar do usuário no banco de dados
       const updatedUser = await this.userService.updateAvatar(
         userId,
-        avatarUrl
+        publicUrl
       );
 
       res.status(200).json({

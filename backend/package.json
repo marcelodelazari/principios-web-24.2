@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
+    "@supabase/supabase-js": "^2.49.4",
     "@types/node": "^22.13.1",
     "@vercel/node": "^5.1.8",
     "bcryptjs": "^2.4.3",

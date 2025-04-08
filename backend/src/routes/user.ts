@@ -6,22 +6,9 @@ import fs from "fs";
 import path from "path";
 
 // Configuração do multer para salvar os arquivos no diretório correto
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, "../../uploads/avatars");
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
-  },
-});
-
+const storage = multer.memoryStorage(); // Armazena os arquivos em memória
 const upload = multer({
-  storage: storage,
+  storage,
   fileFilter: (req, file, cb) => {
     // Apenas imagens são permitidas
     if (!file.mimetype.startsWith("image/")) {
@@ -43,7 +30,14 @@ userRouter.post(
   "/users/:userId/avatar",
   authenticateJWT,
   upload.single("avatar"),
-  userController.uploadAvatar
+  async (req, res, next) => {
+    try {
+      await userController.uploadAvatar(req, res);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
 );
 
 // Atualizar perfil do usuário
