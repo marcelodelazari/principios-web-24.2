@@ -39,6 +39,8 @@ import {
   updatePost,
 } from "../services/api";
 import { colors } from "../theme/colors";
+import CommentForm from "../components/CommentForm";
+import CommentItem from "../components/CommentItem";
 
 interface Post {
   id: string;
@@ -69,215 +71,6 @@ interface Comment {
     userId: number;
   }>;
 }
-
-// Componente memorizado para comentário individual
-const CommentItem = memo(
-  ({
-    comment,
-    postId,
-    onDeleteComment,
-    currentUserId,
-    isAdmin,
-  }: {
-    comment: Comment;
-    postId: string;
-    onDeleteComment: (commentId: string) => void;
-    currentUserId?: string;
-    isAdmin?: boolean;
-  }) => {
-    const theme = useTheme();
-    const [commentScore, setCommentScore] = useState(comment.score);
-    const [commentVote, setCommentVote] = useState(comment.userVote);
-
-    const handleDelete = async () => {
-      if (window.confirm("Tem certeza que deseja excluir este comentário?")) {
-        try {
-          await deleteComment(postId, comment.id);
-          onDeleteComment(comment.id);
-        } catch (error) {
-          console.error("Erro ao deletar comentário:", error);
-        }
-      }
-    };
-
-    return (
-      <Card
-        sx={{
-          mb: 2,
-          boxShadow: 0,
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <CardContent>
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-            <Box
-              sx={{
-                minWidth: 80,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <VoteButtons
-                targetId={comment.id}
-                type="comment"
-                initialScore={comment.score}
-                initialVote={comment.userVote}
-                onVoteUpdate={(newScore, newVote) => {
-                  setCommentScore(newScore);
-                  setCommentVote(newVote);
-                }}
-              />
-            </Box>
-
-            <Box sx={{ flexGrow: 1 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                }}
-              >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    whiteSpace: "pre-line",
-                    lineHeight: 1.6,
-                    mb: 1.5,
-                    flexGrow: 1,
-                    pr: 2,
-                  }}
-                >
-                  {comment.content}
-                </Typography>
-
-                {(currentUserId === comment.authorId || isAdmin) && (
-                  <IconButton
-                    onClick={handleDelete}
-                    size="small"
-                    sx={{
-                      color: theme.palette.error.main,
-                      "&:hover": {
-                        backgroundColor: theme.palette.action.hover,
-                      },
-                      mt: -1,
-                      mr: -1,
-                    }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                )}
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 1.5,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <Avatar
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    fontSize: "0.8rem",
-                    bgcolor: theme.palette.secondary.main,
-                  }}
-                >
-                  {comment.authorName[0]}
-                </Avatar>
-                <Typography variant="caption" color="text.secondary">
-                  {comment.authorName}
-                </Typography>
-
-                {currentUserId === comment.authorId && (
-                  <>
-                    <Typography variant="caption">•</Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: theme.palette.success.main,
-                        fontWeight: 500,
-                      }}
-                    >
-                      Seu comentário
-                    </Typography>
-                  </>
-                )}
-
-                <Typography variant="caption">•</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatDistanceToNow(new Date(comment.createdAt), {
-                    addSuffix: true,
-                    locale: ptBR,
-                  })}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  }
-);
-
-// Componente de formulário memorizado para evitar re-renderizações
-const CommentForm = memo(
-  ({ onSubmit }: { onSubmit: (content: string) => void }) => {
-    const [commentText, setCommentText] = useState("");
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!commentText.trim()) return;
-      onSubmit(commentText);
-      setCommentText("");
-    };
-
-    return (
-      <Card sx={{ mb: 4, bgcolor: "background.paper" }}>
-        <CardContent>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mb: 2 }}>
-            <TextField
-              fullWidth
-              multiline
-              minRows={3}
-              maxRows={6}
-              label="Escreva seu comentário"
-              variant="outlined"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              sx={{ mb: 2 }}
-              inputProps={{ maxLength: 500 }}
-            />
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                {commentText.length}/500 caracteres
-              </Typography>
-              <Button
-                type="submit"
-                variant="contained"
-                size="medium"
-                sx={{ textTransform: "none" }}
-              >
-                Publicar comentário
-              </Button>
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  }
-);
-
-// Componente principal
 export default function PostDetails(): ReactElement {
   const { postId } = useParams();
   const [post, setPost] = useState<Post | null>(null);
@@ -286,9 +79,6 @@ export default function PostDetails(): ReactElement {
   const { user, logout } = useAuth();
   const theme = useTheme();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  
-  // Estado para controlar o diálogo de edição
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -319,7 +109,7 @@ export default function PostDetails(): ReactElement {
 
         setPost(processedPost);
         setComments(processedComments);
-        
+
         // Inicializar campos de edição com os dados atuais do post
         setEditTitle(processedPost.title);
         setEditContent(processedPost.content);
@@ -343,7 +133,7 @@ export default function PostDetails(): ReactElement {
       }
     }
   }, [post, navigate]);
-  
+
   // Função para abrir o diálogo de edição
   const handleOpenEditDialog = useCallback(() => {
     if (!post) return;
@@ -351,29 +141,29 @@ export default function PostDetails(): ReactElement {
     setEditContent(post.content);
     setEditDialogOpen(true);
   }, [post]);
-  
+
   // Função para fechar o diálogo de edição
   const handleCloseEditDialog = useCallback(() => {
     setEditDialogOpen(false);
   }, []);
-  
+
   // Função para salvar as alterações do post
   const handleSaveEdit = useCallback(async () => {
     if (!post || !postId) return;
-    
+
     try {
       const response = await updatePost(postId, editTitle, editContent);
-      
+
       // Atualizar o post na interface
-      setPost(prev => {
+      setPost((prev) => {
         if (!prev) return null;
         return {
           ...prev,
           title: editTitle,
-          content: editContent
+          content: editContent,
         };
       });
-      
+
       setEditDialogOpen(false);
     } catch (error) {
       console.error("Error updating post:", error);
@@ -612,7 +402,7 @@ export default function PostDetails(): ReactElement {
                     Editar Post
                   </Button>
                 )}
-                
+
                 {/* Botão de deletar (só aparece para o autor ou admin) */}
                 {(isPostAuthor || user?.isAdmin) && (
                   <Button
@@ -646,16 +436,16 @@ export default function PostDetails(): ReactElement {
                   {post.author.name[0]}
                 </Avatar>
                 <Typography variant="body2" color="textSecondary">
-                          {post.author.name}
-                        </Typography>
-                        {isPostAuthor && (
-                          <Chip
-                            label="Seu post"
-                            size="small"
-                            color="success"
-                            sx={{ borderRadius: 1, fontWeight: 500 }}
-                          />
-                        )}
+                  {post.author.name}
+                </Typography>
+                {isPostAuthor && (
+                  <Chip
+                    label="Seu post"
+                    size="small"
+                    color="success"
+                    sx={{ borderRadius: 1, fontWeight: 500 }}
+                  />
+                )}
                 <Typography variant="caption">•</Typography>
                 <Typography variant="caption" color="text.secondary">
                   {formatDistanceToNow(new Date(post.createdAt), {
@@ -693,10 +483,10 @@ export default function PostDetails(): ReactElement {
           ))}
         </Box>
       </Container>
-      
+
       {/* Diálogo de Edição */}
-      <Dialog 
-        open={editDialogOpen} 
+      <Dialog
+        open={editDialogOpen}
         onClose={handleCloseEditDialog}
         fullWidth
         maxWidth="md"
@@ -726,8 +516,12 @@ export default function PostDetails(): ReactElement {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseEditDialog} color="inherit">Cancelar</Button>
-          <Button onClick={handleSaveEdit} color="primary" variant="contained">Salvar Alterações</Button>
+          <Button onClick={handleCloseEditDialog} color="inherit">
+            Cancelar
+          </Button>
+          <Button onClick={handleSaveEdit} color="primary" variant="contained">
+            Salvar Alterações
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
