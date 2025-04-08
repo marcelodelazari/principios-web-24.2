@@ -6,13 +6,7 @@ import {
   useEffect,
 } from "react";
 import { getCurrentUser } from "../services/api";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-}
+import { User } from "../models";
 
 interface AuthContextType {
   user: User | null;

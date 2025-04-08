@@ -42,12 +42,13 @@ import { colors } from "../theme/colors";
 import CommentForm from "../components/CommentForm";
 import CommentItem from "../components/CommentItem";
 import NavBar from "../components/NavBar";
+import UserAvatar from "../components/UserAvatar";
 
 interface Post {
   id: string;
   title: string;
   content: string;
-  author: { name: string };
+  author: { name: string; avatarUrl?: string };
   authorId: string;
   createdAt: string;
   votes: Array<{
@@ -336,17 +337,24 @@ export default function PostDetails(): ReactElement {
                   mt: 2,
                 }}
               >
-                <Avatar
+                <UserAvatar
+                  name={post.author.name}
+                  avatarUrl={post.author.avatarUrl}
+                  size={40}
+                />
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  component={Link}
+                  to={`/profile/${post.authorId}`}
                   sx={{
-                    width: 24,
-                    height: 24,
-                    fontSize: "0.8rem",
-                    bgcolor: theme.palette.primary.main,
+                    textDecoration: "none",
+                    color: theme.palette.text.secondary,
+                    "&:hover": {
+                      color: theme.palette.primary.main,
+                    },
                   }}
                 >
-                  {post.author.name[0]}
-                </Avatar>
-                <Typography variant="body2" color="textSecondary">
                   {post.author.name}
                 </Typography>
                 {isPostAuthor && (

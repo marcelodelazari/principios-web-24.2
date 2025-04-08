@@ -5,6 +5,7 @@ declare global {
   namespace Express {
     interface Request {
       userId?: number;
+      file?: Express.Multer.File; // Added file property
     }
   }
 }
@@ -64,6 +65,7 @@ export class UserController {
         .json({ message: error.message || "Erro interno do servidor." });
     }
   };
+
   getCurrentUser = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.userId) {
@@ -77,7 +79,8 @@ export class UserController {
         id: user.id,
         name: user.name,
         email: user.email,
-        isAdmin: user.isAdmin, // Adicionado
+        isAdmin: user.isAdmin,
+        avatarUrl: user.avatarUrl, // Certifique-se de incluir avatarUrl
         createdAt: user.createdAt,
       });
     } catch (error: any) {
@@ -85,6 +88,64 @@ export class UserController {
       res.status(500).json({
         message: error.message || "Erro ao obter usuário atual",
       });
+    }
+  };
+
+  updateProfile = async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { name, bio, location } = req.body;
+
+      if (req.userId !== userId) {
+        res.status(403).json({ message: "Não autorizado" });
+      }
+
+      const updatedUser = await this.userService.updateProfile(userId, {
+        name,
+        bio,
+        location,
+      });
+
+      res.json(updatedUser);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  };
+
+  uploadAvatar = async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+
+      if (req.userId !== userId) {
+        res.status(403).json({ message: "Não autorizado" });
+      }
+
+      if (!req.file) {
+        res.status(400).json({ message: "Nenhum arquivo enviado" });
+      }
+
+      const avatarUrl = req.file
+        ? `/uploads/avatars/${req.file.filename}`
+        : null;
+
+      if (!avatarUrl) {
+        res.status(400).json({ message: "Nenhum arquivo enviado" });
+        return;
+      }
+      const updatedUser = await this.userService.updateAvatar(
+        userId,
+        avatarUrl
+      );
+
+      res.status(200).json({
+        message: "Avatar atualizado com sucesso",
+        user: updatedUser,
+      });
+    } catch (error: any) {
+      console.error("Erro ao fazer upload do avatar:", error);
+      res
+        .status(500)
+        .json({ message: error.message || "Erro interno do servidor" });
     }
   };
 }

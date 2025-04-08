@@ -5,6 +5,10 @@ export interface User {
   name: string;
   email: string;
   isAdmin: boolean;
+  bio?: string;
+  avatarUrl?: string;
+  location?: string;
+  createdAt: Date;
 }
 
 export interface Vote {
@@ -16,7 +20,10 @@ export interface Post {
   id: string;
   title: string;
   content: string;
-  author: { name: string };
+  author: {
+    name: string;
+    avatarUrl?: string; // Adicionado avatarUrl
+  };
   authorId: string;
   createdAt: string;
   votes: Array<{

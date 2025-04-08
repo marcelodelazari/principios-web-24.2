@@ -47,6 +47,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
 // Inicia o servidor somente se não estiver no ambiente de teste
 if (process.env.NODE_ENV !== "test") {
   app.listen(port, () => {

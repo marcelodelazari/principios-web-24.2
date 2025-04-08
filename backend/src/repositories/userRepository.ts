@@ -16,6 +16,9 @@ export class UserRepository {
         id: true,
         name: true,
         email: true,
+        bio: true,
+        avatarUrl: true,
+        location: true,
         isAdmin: true,
         createdAt: true,
       },
@@ -28,10 +31,29 @@ export class UserRepository {
     });
   }
 
-  async updateUser(userId: number, data: { name?: string; email?: string }) {
+  async updateUser(
+    userId: number,
+    data: {
+      name?: string;
+      email?: string;
+      bio?: string;
+      avatarUrl?: string;
+      location?: string;
+    }
+  ) {
     return prisma.user.update({
       where: { id: userId },
       data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        bio: true,
+        avatarUrl: true,
+        location: true,
+        isAdmin: true,
+        createdAt: true,
+      },
     });
   }
 

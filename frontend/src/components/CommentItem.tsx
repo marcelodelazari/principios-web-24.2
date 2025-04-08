@@ -13,6 +13,8 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import VoteButtons from "./VoteButtons";
 import { deleteComment } from "../services/api";
+import { Link } from "react-router-dom";
+import UserAvatar from "./UserAvatar";
 
 export interface Comment {
   id: string;
@@ -26,6 +28,7 @@ export interface Comment {
     voteType: "upvote" | "downvote";
     userId: number;
   }>;
+  authorAvatarUrl?: string;
 }
 
 interface CommentItemProps {
@@ -137,17 +140,24 @@ const CommentItem = memo(
                   flexWrap: "wrap",
                 }}
               >
-                <Avatar
+                <UserAvatar
+                  name={comment.authorName}
+                  avatarUrl={comment.authorAvatarUrl}
+                  size={24}
+                />
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  component={Link}
+                  to={`/profile/${comment.authorId}`} // Redireciona para o perfil do autor
                   sx={{
-                    width: 24,
-                    height: 24,
-                    fontSize: "0.8rem",
-                    bgcolor: theme.palette.secondary.main,
+                    textDecoration: "none",
+                    color: theme.palette.text.secondary,
+                    "&:hover": {
+                      color: theme.palette.primary.main,
+                    },
                   }}
                 >
-                  {comment.authorName[0]}
-                </Avatar>
-                <Typography variant="caption" color="text.secondary">
                   {comment.authorName}
                 </Typography>
 

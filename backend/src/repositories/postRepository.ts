@@ -19,7 +19,12 @@ export class PostRepository {
   async getPosts(currentUserId?: number) {
     return prisma.post.findMany({
       include: {
-        author: { select: { name: true } },
+        author: {
+          select: {
+            name: true,
+            avatarUrl: true, // Inclui o campo avatarUrl
+          },
+        },
         votes: {
           select: {
             voteType: true,
@@ -53,7 +58,12 @@ export class PostRepository {
     return prisma.post.findUnique({
       where: { id: parseInt(postId) },
       include: {
-        author: { select: { name: true } },
+        author: {
+          select: {
+            name: true,
+            avatarUrl: true, // Inclui o campo avatarUrl
+          },
+        },
         votes: {
           where: currentUserId ? { userId: currentUserId } : undefined,
           select: { voteType: true, userId: true }, // Adicionado userId

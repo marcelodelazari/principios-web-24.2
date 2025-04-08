@@ -24,12 +24,10 @@ export class PostService {
     const posts = await this.postRepository.getPosts(currentUserId);
 
     return posts.map((post) => {
-      // Calcula o score total com todos os votos
       const totalScore = post.votes.reduce((acc, vote) => {
         return vote.voteType === "upvote" ? acc + 1 : acc - 1;
       }, 0);
 
-      // Encontra o voto do usuário atual (se existir)
       const userVote = currentUserId
         ? post.votes.find((v) => v.userId === currentUserId)?.voteType
         : null;
@@ -38,9 +36,9 @@ export class PostService {
         ...post,
         id: post.id.toString(),
         authorId: post.authorId.toString(),
-        score: totalScore, // Usa o score calculado com todos os votos
+        score: totalScore,
         commentsCount: post._count.comments,
-        userVote: userVote || null, // Mantém a informação do voto do usuário
+        userVote: userVote || null,
       };
     });
   }

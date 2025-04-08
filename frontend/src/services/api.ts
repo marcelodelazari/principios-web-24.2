@@ -12,7 +12,7 @@ import {
 
 // Configure a URL base correta do backend
 const api = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND_URL || "http://localhost:3001", // Porta padrão caso env não esteja definido
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001", // Porta padrão caso env não esteja definido
   timeout: 10000, // Timeout para evitar requisições pendentes por muito tempo
 });
 
@@ -216,9 +216,16 @@ export const registerUser = async (userData: {
   }
 };
 
+const baseURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001";
+
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const response = await api.get<User>("/users/me");
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`${baseURL}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -227,3 +234,54 @@ export const getCurrentUser = async (): Promise<User | null> => {
     return null;
   }
 };
+
+export const updateProfile = async (
+  userId: number,
+  data: {
+    name?: string;
+    bio?: string;
+    location?: string;
+  }
+): Promise<User> => {
+  const token = localStorage.getItem("token");
+  const response = await axios.put(`${baseURL}/users/${userId}/profile`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const uploadAvatar = async (
+  userId: number,
+  file: File
+): Promise<User> => {
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const response = await axios.post(
+    `${baseURL}/users/${userId}/avatar`,
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data.user; // Retorna o objeto atualizado do usuário
+};
+
+export const getUserProfile = async (userId: number): Promise<User> => {
+  const token = localStorage.getItem("token");
+  const response = await axios.get(`${baseURL}/users/${userId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export default api;

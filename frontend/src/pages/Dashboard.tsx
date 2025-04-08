@@ -25,11 +25,12 @@ import VoteButtons from "../components/VoteButtons";
 import { colors } from "../theme/colors";
 import NavBar from "../components/NavBar";
 import { Post } from "../models";
+import UserAvatar from "../components/UserAvatar";
 
 export default function Dashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -39,13 +40,13 @@ export default function Dashboard() {
         const data = await getPosts();
         setPosts(data);
       } catch (error) {
-        console.error("Error fetching posts:", error);
+        console.error("Erro ao buscar posts:", error);
       } finally {
         setLoading(false);
       }
     };
     fetchPosts();
-  }, [user?.id]);
+  }, []);
 
   const handleDeletePost = async (postId: string) => {
     if (window.confirm("Tem certeza que deseja excluir este post?")) {
@@ -60,7 +61,7 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: colors.background.default }}>
-      <NavBar></NavBar>
+      <NavBar />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Box sx={{ mb: 4 }}>
           <Typography
@@ -221,17 +222,24 @@ export default function Dashboard() {
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 1 }}
                       >
-                        <Avatar
+                        <UserAvatar
+                          name={post.author.name}
+                          avatarUrl={post.author.avatarUrl}
+                          size={28}
+                        />
+                        <Typography
+                          variant="body2"
+                          color="textSecondary"
+                          component={Link}
+                          to={`/profile/${post.authorId}`} // Redireciona para o perfil do autor
                           sx={{
-                            width: 28,
-                            height: 28,
-                            fontSize: 14,
-                            bgcolor: theme.palette.grey[700],
+                            textDecoration: "none",
+                            color: theme.palette.text.secondary,
+                            "&:hover": {
+                              color: theme.palette.primary.main,
+                            },
                           }}
                         >
-                          {post.author.name[0]}
-                        </Avatar>
-                        <Typography variant="body2" color="textSecondary">
                           {post.author.name}
                         </Typography>
                         {isAuthor && (

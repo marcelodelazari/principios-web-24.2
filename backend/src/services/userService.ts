@@ -33,16 +33,57 @@ export class UserService {
       id: user.id,
       name: user.name,
       email: user.email,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl,
+      location: user.location,
       isAdmin: user.isAdmin,
       createdAt: user.createdAt,
     };
   }
 
-  async updateUser(userId: number, data: { name?: string; email?: string }) {
+  async updateUser(
+    userId: number,
+    data: {
+      name?: string;
+      email?: string;
+      bio?: string;
+      avatarUrl?: string;
+      location?: string;
+    }
+  ) {
+    const user = await this.userRepository.getUserById(userId);
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
     return this.userRepository.updateUser(userId, data);
   }
 
   async deleteUser(userId: number) {
     return this.userRepository.deleteUser(userId);
+  }
+
+  async updateProfile(
+    userId: number,
+    data: {
+      name?: string;
+      bio?: string;
+      location?: string;
+    }
+  ) {
+    const user = await this.userRepository.getUserById(userId);
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    return this.userRepository.updateUser(userId, data);
+  }
+
+  async updateAvatar(userId: number, avatarUrl: string) {
+    const user = await this.userRepository.getUserById(userId);
+    if (!user) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    return this.userRepository.updateUser(userId, { avatarUrl });
   }
 }

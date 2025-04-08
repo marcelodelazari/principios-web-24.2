@@ -17,6 +17,7 @@ import Register from "./pages/Register";
 import PostDetails from "./pages/PostDetails";
 import CreatePost from "./pages/CreatePost";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProfilePage from "./pages/Profile";
 
 // Criação do tema personalizado
 const theme = createTheme(
@@ -87,6 +88,8 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                {/* Rota para o perfil do usuário logado ou de outros usuários */}
+                <Route path="/profile/:userId" element={<ProfilePage />} />
               </Routes>
             </Router>
           </PostProvider>
