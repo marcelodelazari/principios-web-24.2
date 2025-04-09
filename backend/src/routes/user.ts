@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { UserController } from "../controllers/userController";
-import { authenticateJWT } from "../middlewares/authMiddleware";
+import {
+  authenticateJWT,
+  optionalAuthenticateJWT,
+} from "../middlewares/authMiddleware";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -23,7 +26,11 @@ const userController = new UserController();
 
 // Rotas existentes
 userRouter.get("/users/me", authenticateJWT, userController.getCurrentUser);
-userRouter.get("/users/:userId", authenticateJWT, userController.getUserById);
+userRouter.get(
+  "/users/:userId",
+  optionalAuthenticateJWT,
+  userController.getUserById
+);
 
 // Rota para atualizar o avatar do usuário
 userRouter.post(
