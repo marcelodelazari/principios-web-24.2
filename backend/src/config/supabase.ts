@@ -11,3 +11,17 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Teste para listar os buckets
+(async () => {
+  try {
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    if (error) {
+      console.error("Erro ao listar buckets do Supabase:", error.message);
+    } else {
+      console.log("Buckets disponíveis no Supabase:", buckets);
+    }
+  } catch (err) {
+    console.error("Erro ao testar conexão com o Supabase:", err);
+  }
+})();
