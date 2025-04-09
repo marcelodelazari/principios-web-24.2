@@ -82,6 +82,7 @@ export class UserController {
         email: user.email,
         isAdmin: user.isAdmin, // Adicionado
         createdAt: user.createdAt,
+        avatarUrl: user.avatarUrl,
       });
     } catch (error: any) {
       console.error("Erro no getCurrentUser:", error);
