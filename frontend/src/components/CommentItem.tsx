@@ -142,7 +142,7 @@ const CommentItem = memo(
               >
                 <UserAvatar
                   name={comment.authorName}
-                  avatarUrl={comment.authorAvatarUrl}
+                  avatarUrl={comment.authorAvatarUrl || undefined} // Garante que o avatarUrl seja passado corretamente
                   size={24}
                 />
                 <Typography

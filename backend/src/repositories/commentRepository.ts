@@ -27,6 +27,7 @@ export class CommentRepository {
         author: {
           select: {
             name: true,
+            avatarUrl: true, // Inclui o campo avatarUrl
           },
         },
         votes: {

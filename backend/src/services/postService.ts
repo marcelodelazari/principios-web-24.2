@@ -36,6 +36,10 @@ export class PostService {
         ...post,
         id: post.id.toString(),
         authorId: post.authorId.toString(),
+        author: {
+          name: post.author.name,
+          avatarUrl: post.author.avatarUrl, // Inclui o avatar do autor
+        },
         score: totalScore,
         commentsCount: post._count.comments,
         userVote: userVote || null,
@@ -51,13 +55,10 @@ export class PostService {
 
     if (!post) return null;
 
-    // 1. Calcular score com TODOS os votos
-    const allVotes = await this.postRepository.getPostVotes(parseInt(postId));
-    const totalScore = allVotes.reduce((acc, vote) => {
+    const totalScore = post.votes.reduce((acc, vote) => {
       return vote.voteType === "upvote" ? acc + 1 : acc - 1;
     }, 0);
 
-    // 2. Encontrar userVote corretamente
     const userVote = currentUserId
       ? post.votes.find((v) => v.userId === currentUserId)?.voteType
       : null;
@@ -66,7 +67,11 @@ export class PostService {
       ...post,
       id: post.id.toString(),
       authorId: post.authorId.toString(),
-      score: totalScore, // Score calculado com todos os votos
+      author: {
+        name: post.author.name,
+        avatarUrl: post.author.avatarUrl, // Inclui o avatar do autor
+      },
+      score: totalScore,
       commentsCount: post._count.comments,
       userVote: userVote || null,
     };

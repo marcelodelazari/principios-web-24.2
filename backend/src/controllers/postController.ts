@@ -25,7 +25,6 @@ export class PostController {
   };
 
   // Método para listar todos os posts
-  // backend/src/controllers/postController.ts
   getPosts = async (req: Request, res: Response) => {
     try {
       const currentUserId = (req as any).userId;
@@ -42,8 +41,8 @@ export class PostController {
   getPostById = async (req: Request, res: Response) => {
     try {
       const postId = req.params.postId;
-      const currentUserId = (req as any).userId; // Novo
-      const post = await this.postService.getPostById(postId, currentUserId); // Alterado
+      const currentUserId = (req as any).userId;
+      const post = await this.postService.getPostById(postId, currentUserId);
       res.status(200).json(post);
     } catch (error: any) {
       res

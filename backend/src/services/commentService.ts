@@ -35,6 +35,7 @@ export class CommentService {
         postId: comment.postId.toString(),
         authorId: comment.authorId.toString(),
         authorName: comment.author.name,
+        authorAvatarUrl: comment.author.avatarUrl, // Inclui o avatar do autor
         score,
         userVote,
         author: undefined,

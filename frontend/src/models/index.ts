@@ -41,6 +41,7 @@ export interface Comment {
   authorId: string;
   createdAt: string;
   authorName: string;
+  authorAvatarUrl?: string; // Adicionado o campo para o avatar do autor
   score: number;
   userVote: "upvote" | "downvote" | null;
   votes: Array<{
