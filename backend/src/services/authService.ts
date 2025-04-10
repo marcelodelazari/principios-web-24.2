@@ -1,6 +1,11 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db";
+import { googleClient, GOOGLE_CLIENT_ID } from "../config/googleAuth";
+import { OAuth2Client } from "google-auth-library";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export const loginService = async (email: string, password: string) => {
   try {
@@ -20,7 +25,7 @@ export const loginService = async (email: string, password: string) => {
     const token = jwt.sign(
       {
         userId: user.id,
-        isAdmin: user.isAdmin, // Adiciona o isAdmin ao payload
+        isAdmin: user.isAdmin,
       },
       process.env.JWT_SECRET || "secret",
       { expiresIn: "1h" }
@@ -32,6 +37,7 @@ export const loginService = async (email: string, password: string) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        isAdmin: user.isAdmin,
       },
     };
   } catch (error: unknown) {
@@ -58,9 +64,154 @@ export const registerService = async (
     return { message: "Usuário criado com sucesso", user: result.rows[0] };
   } catch (error: unknown) {
     if (error instanceof Error) {
-      throw new Error(error.message); // Trate o erro de forma adequada
+      throw new Error(error.message);
     } else {
       throw new Error("Erro interno do servidor");
     }
+  }
+};
+
+// Gera a URL para autenticação com Google
+export const getGoogleAuthURL = () => {
+  const url = googleClient.generateAuthUrl({
+    access_type: "offline",
+    scope: [
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ],
+    prompt: "consent",
+  });
+
+  return url;
+};
+
+// Processa o retorno da autenticação do Google
+export const processGoogleCallback = async (code: string) => {
+  try {
+    // Troca o código por tokens
+    const { tokens } = await googleClient.getToken(code);
+    googleClient.setCredentials(tokens);
+
+    // Obtém informações do usuário
+    const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    oauth2Client.setCredentials({ access_token: tokens.access_token });
+
+    const url = "https://www.googleapis.com/oauth2/v2/userinfo";
+    const res = await oauth2Client.request({ url });
+    const userInfo = res.data as {
+      id: string;
+      email: string;
+      name: string;
+      picture: string;
+    };
+
+    // Verifica se o usuário já existe
+    let user = await prisma.user.findUnique({
+      where: { email: userInfo.email },
+    });
+
+    if (!user) {
+      // Se não existir, cria um novo usuário com uma senha aleatória (o usuário não vai usar)
+      const passwordHash = await bcrypt.hash(
+        Math.random().toString(36).slice(-8),
+        10
+      );
+
+      user = await prisma.user.create({
+        data: {
+          name: userInfo.name,
+          email: userInfo.email,
+          passwordHash,
+          avatarUrl: userInfo.picture,
+        },
+      });
+    }
+
+    // Gera um token JWT para o usuário
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        isAdmin: user.isAdmin,
+      },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "1h" }
+    );
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        avatarUrl: user.avatarUrl,
+      },
+    };
+  } catch (error) {
+    console.error("Erro na autenticação Google:", error);
+    throw new Error("Falha na autenticação com Google");
+  }
+};
+
+// Verifica e processa um token ID do Google (para login direto do frontend)
+export const verifyGoogleToken = async (tokenId: string) => {
+  try {
+    // Verifica o token ID
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: tokenId,
+      audience: GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      throw new Error("Token inválido");
+    }
+
+    // Verifica se o usuário já existe
+    let user = await prisma.user.findUnique({
+      where: { email: payload.email },
+    });
+
+    if (!user) {
+      // Se não existir, cria um novo usuário
+      const passwordHash = await bcrypt.hash(
+        Math.random().toString(36).slice(-8),
+        10
+      );
+
+      user = await prisma.user.create({
+        data: {
+          name: payload.name || payload.email.split("@")[0],
+          email: payload.email,
+          passwordHash,
+          avatarUrl: payload.picture,
+        },
+      });
+    }
+
+    // Gera um token JWT para o usuário
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        isAdmin: user.isAdmin,
+      },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "1h" }
+    );
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        avatarUrl: user.avatarUrl,
+      },
+    };
+  } catch (error) {
+    console.error("Erro na verificação do token Google:", error);
+    throw new Error("Token do Google inválido");
   }
 };
