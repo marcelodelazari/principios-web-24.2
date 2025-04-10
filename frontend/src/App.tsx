@@ -18,6 +18,7 @@ import PostDetails from "./pages/PostDetails";
 import CreatePost from "./pages/CreatePost";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProfilePage from "./pages/Profile";
+import GoogleCallback from "./pages/GoogleCallback"; // Importa a nova página de callback
 
 // Criação do tema personalizado
 const theme = createTheme(
@@ -80,6 +81,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/posts/:postId" element={<PostDetails />} />
+                <Route path="/google/callback" element={<GoogleCallback />} />
                 <Route
                   path="/create-post"
                   element={

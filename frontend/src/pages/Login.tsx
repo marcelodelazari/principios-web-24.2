@@ -10,7 +10,9 @@ import {
   Box,
   useTheme,
   Stack,
+  Divider,
 } from "@mui/material";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -73,7 +75,18 @@ export default function Login() {
           Login
         </Typography>
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+        {/* Botão de Login Google */}
+        <GoogleLoginButton />
+
+        <Box sx={{ position: "relative", my: 3 }}>
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="body2" sx={{ px: 1, color: "text.secondary" }}>
+              ou
+            </Typography>
+          </Divider>
+        </Box>
+
+        <Box component="form" onSubmit={handleSubmit}>
           <TextField
             fullWidth
             label="Digite seu email"

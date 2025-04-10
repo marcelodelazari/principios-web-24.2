@@ -285,3 +285,22 @@ export const getUserProfile = async (userId: number): Promise<User> => {
 };
 
 export default api;
+
+// Função para processar login via Google (usado quando o usuário é redirecionado de volta do Google)
+export const processGoogleLogin = async (
+  code: string
+): Promise<AuthResponse> => {
+  try {
+    const response = await api.post<AuthResponse>("/google/login", { code });
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao processar login do Google:", error);
+    throw error;
+  }
+};
+
+// Função para verificar se o usuário está sendo redirecionado do Google (com parâmetro 'code' na URL)
+export const checkGoogleRedirect = (): string | null => {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get("code");
+};
