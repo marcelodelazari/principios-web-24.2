@@ -1,6 +1,5 @@
-import { PrismaClient, VoteType } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma"; // ajusta o caminho conforme a pasta
+import { VoteType } from "@prisma/client";
 
 export class PostRepository {
   // Método para criar post

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircularProgress, Box, Typography, Container } from "@mui/material";
-import { processGoogleLogin } from "../services/api";
+import { getCurrentUser } from "../services/api"; // Alterado para getCurrentUser
 import { useAuth } from "../contexts/AuthContext";
 
 const GoogleCallback = () => {
@@ -12,23 +12,24 @@ const GoogleCallback = () => {
   useEffect(() => {
     const processAuth = async () => {
       try {
-        // Pegar o código da URL
         const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get("code");
+        const token = urlParams.get("token");
 
-        if (!code) {
-          setError("Código de autorização não encontrado");
+        console.log("[FRONTEND] Token recebido na URL:", token); // Log para verificar o token recebido
+
+        if (!token) {
+          setError("Token não encontrado");
           return;
         }
 
-        // Processar o login com o código
-        const response = await processGoogleLogin(code);
+        localStorage.setItem("token", token); // Armazena o token no localStorage
+        const currentUser = await getCurrentUser();
 
-        if (response?.token && response?.user) {
-          login(response.token, response.user);
+        if (currentUser) {
+          login(token, currentUser);
           navigate("/");
         } else {
-          setError("Erro ao processar login com Google");
+          setError("Erro ao obter dados do usuário");
         }
       } catch (err) {
         console.error("Erro no callback do Google:", err);

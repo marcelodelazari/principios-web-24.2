@@ -55,22 +55,24 @@ export const googleCallback = async (
 ): Promise<void> => {
   try {
     const { code } = req.query;
+    console.log("Código recebido:", code); // Log do código
 
     if (!code || typeof code !== "string") {
+      console.error("Código ausente ou inválido"); // Log de erro
       res.status(400).json({ message: "Código de autorização ausente" });
       return;
     }
 
     const result = await processGoogleCallback(code);
+    console.log("Resultado do processamento:", result); // Log do resultado
 
-    // Redireciona para o frontend com o token
-    // Você pode alterar esta URL para a página do seu frontend
     const redirectUrl = `${
-      process.env.FRONTEND_URL || "http://localhost:5173"
-    }/auth/callback?token=${result.token}`;
+      process.env.FRONTEND_URL || "http://localhost:3001"
+    }/google/callback?token=${result.token}`;
+    console.log("Redirecionando para:", redirectUrl); // Log do redirecionamento
     res.redirect(redirectUrl);
   } catch (error) {
-    console.error("Erro no callback do Google:", error);
+    console.error("Erro detalhado no callback do Google:", error);
     res.status(500).json({ message: "Erro na autenticação com Google" });
   }
 };

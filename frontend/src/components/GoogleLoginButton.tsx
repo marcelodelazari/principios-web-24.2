@@ -7,10 +7,11 @@ interface GoogleLoginButtonProps {
 
 const GoogleLoginButton = ({ onClick }: GoogleLoginButtonProps) => {
   const handleGoogleLogin = () => {
-    // Redireciona para a rota do backend que inicia o fluxo de autenticação do Google
-    window.location.href = `${
-      process.env.REACT_APP_BACKEND_URL || "http://localhost:3001"
+    const url = `${
+      process.env.REACT_APP_BACKEND_URL || "http://localhost:3000"
     }/google`;
+    console.log("Redirecionando para:", url); // Log da URL
+    window.location.href = url;
   };
 
   return (

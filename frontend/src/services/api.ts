@@ -12,13 +12,15 @@ import {
 
 // Configure a URL base correta do backend
 const api = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND_URL || "http://localhost:3001", // Porta padrão caso env não esteja definido
+  baseURL: process.env.REACT_APP_BACKEND_URL || "http://localhost:3000", // Porta padrão caso env não esteja definido
   timeout: 10000, // Timeout para evitar requisições pendentes por muito tempo
 });
 
 // Interceptor para incluir o token automaticamente
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
+  console.log("[FRONTEND] Token enviado no cabeçalho:", token); // Log para verificar o token
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

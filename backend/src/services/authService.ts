@@ -3,9 +3,7 @@ import jwt from "jsonwebtoken";
 import { pool } from "../config/db";
 import { googleClient, GOOGLE_CLIENT_ID } from "../config/googleAuth";
 import { OAuth2Client } from "google-auth-library";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma"; // ajusta o caminho conforme a pasta
 
 export const loginService = async (email: string, password: string) => {
   try {
@@ -88,8 +86,12 @@ export const getGoogleAuthURL = () => {
 // Processa o retorno da autenticação do Google
 export const processGoogleCallback = async (code: string) => {
   try {
+    console.log("[DEBUG] Iniciando processamento do callback do Google...");
+
     // Troca o código por tokens
     const { tokens } = await googleClient.getToken(code);
+    console.log("[DEBUG] Tokens recebidos:", tokens);
+
     googleClient.setCredentials(tokens);
 
     // Obtém informações do usuário
@@ -105,13 +107,17 @@ export const processGoogleCallback = async (code: string) => {
       picture: string;
     };
 
+    console.log("[DEBUG] Informações do usuário recebidas:", userInfo);
+
     // Verifica se o usuário já existe
     let user = await prisma.user.findUnique({
       where: { email: userInfo.email },
     });
 
     if (!user) {
-      // Se não existir, cria um novo usuário com uma senha aleatória (o usuário não vai usar)
+      console.log("[DEBUG] Usuário não encontrado, criando novo usuário...");
+
+      // Se não existir, cria um novo usuário com uma senha aleatória
       const passwordHash = await bcrypt.hash(
         Math.random().toString(36).slice(-8),
         10
@@ -125,6 +131,10 @@ export const processGoogleCallback = async (code: string) => {
           avatarUrl: userInfo.picture,
         },
       });
+
+      console.log("[DEBUG] Novo usuário criado:", user);
+    } else {
+      console.log("[DEBUG] Usuário já existe:", user);
     }
 
     // Gera um token JWT para o usuário
@@ -137,6 +147,8 @@ export const processGoogleCallback = async (code: string) => {
       { expiresIn: "1h" }
     );
 
+    console.log("[DEBUG] Token JWT gerado:", token);
+
     return {
       token,
       user: {
@@ -148,7 +160,7 @@ export const processGoogleCallback = async (code: string) => {
       },
     };
   } catch (error) {
-    console.error("Erro na autenticação Google:", error);
+    console.error("[ERROR] Erro na autenticação Google:", error);
     throw new Error("Falha na autenticação com Google");
   }
 };

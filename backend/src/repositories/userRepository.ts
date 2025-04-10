@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma"; // ajusta o caminho conforme a pasta
 
 export class UserRepository {
   async createUser(name: string, email: string, passwordHash: string) {
