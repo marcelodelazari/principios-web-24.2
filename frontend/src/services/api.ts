@@ -218,16 +218,9 @@ export const registerUser = async (userData: {
   }
 };
 
-const baseURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001";
-
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const token = localStorage.getItem("token");
-    const response = await axios.get(`${baseURL}/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await api.get("/users/me");
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -245,12 +238,7 @@ export const updateProfile = async (
     location?: string;
   }
 ): Promise<User> => {
-  const token = localStorage.getItem("token");
-  const response = await axios.put(`${baseURL}/users/${userId}/profile`, data, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.put(`/users/${userId}/profile`, data);
   return response.data;
 };
 
@@ -258,35 +246,22 @@ export const uploadAvatar = async (
   userId: number,
   file: File
 ): Promise<User> => {
-  const token = localStorage.getItem("token");
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const response = await axios.post(
-    `${baseURL}/users/${userId}/avatar`,
-    formData,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  const response = await api.post(`/users/${userId}/avatar`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
-  return response.data.user; // Retorna o objeto atualizado do usuário
+  return response.data.user;
 };
 
 export const getUserProfile = async (userId: number): Promise<User> => {
-  const token = localStorage.getItem("token");
-  const response = await axios.get(`${baseURL}/users/${userId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.get(`/users/${userId}`);
   return response.data;
 };
-
-export default api;
 
 // Função para processar login via Google (usado quando o usuário é redirecionado de volta do Google)
 export const processGoogleLogin = async (
@@ -306,3 +281,5 @@ export const checkGoogleRedirect = (): string | null => {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get("code");
 };
+
+export default api;
