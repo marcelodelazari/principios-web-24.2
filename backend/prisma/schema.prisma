@@ -24,6 +24,9 @@ model User {
   comments     Comment[]
   postVotes    PostVote[]
   commentVotes CommentVote[]
+
+  sentFriendRequests     Friendship[] @relation("RequestingFriend")
+  receivedFriendRequests Friendship[] @relation("ReceivingFriend")
 }
 
 model Post {
@@ -31,8 +34,8 @@ model Post {
   title     String
   content   String
   createdAt DateTime  @default(now())
-  authorId  Int
-  author    User      @relation(fields: [authorId], references: [id])
+  authorId  Int?
+  author    User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
   comments  Comment[]
   votes     PostVote[]
 }
@@ -42,9 +45,9 @@ model Comment {
   content   String
   createdAt DateTime  @default(now())
   postId    Int
-  authorId  Int
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User      @relation(fields: [authorId], references: [id])
+  authorId  Int?
+  author    User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
   votes     CommentVote[]
 }
 
@@ -55,7 +58,7 @@ model PostVote {
   postId    Int
   userId    Int
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete:Cascade)
 
   @@unique([postId, userId])
 }
@@ -67,7 +70,7 @@ model CommentVote {
   commentId  Int
   userId     Int
   comment    Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([commentId, userId])
 }
@@ -75,4 +78,26 @@ model CommentVote {
 enum VoteType {
   upvote
   downvote
+}
+
+model Friendship {
+  id         Int       @id @default(autoincrement())
+  requester  User      @relation("RequestingFriend", fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterId Int
+
+  receiver   User      @relation("ReceivingFriend", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId Int
+
+  status     FriendshipStatus @default(pending)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([requesterId, receiverId])
+}
+
+enum FriendshipStatus {
+  pending
+  accepted
+  blocked
+  declined
 }
