@@ -32,13 +32,17 @@ export class PostService {
         ? post.votes.find((v) => v.userId === currentUserId)?.voteType
         : null;
 
+      // Tratamento para autor nulo
+      const authorName = post.author?.name || "Usuário deletado";
+      const authorAvatarUrl = post.author?.avatarUrl || null;
+
       return {
         ...post,
         id: post.id.toString(),
-        authorId: post.authorId.toString(),
+        authorId: post.authorId?.toString() || "0",
         author: {
-          name: post.author.name,
-          avatarUrl: post.author.avatarUrl, // Inclui o avatar do autor
+          name: authorName,
+          avatarUrl: authorAvatarUrl,
         },
         score: totalScore,
         commentsCount: post._count.comments,
@@ -63,13 +67,17 @@ export class PostService {
       ? post.votes.find((v) => v.userId === currentUserId)?.voteType
       : null;
 
+    // Tratamento para autor nulo
+    const authorName = post.author?.name || "Usuário deletado";
+    const authorAvatarUrl = post.author?.avatarUrl || null;
+
     return {
       ...post,
       id: post.id.toString(),
-      authorId: post.authorId.toString(),
+      authorId: post.authorId?.toString() || "0",
       author: {
-        name: post.author.name,
-        avatarUrl: post.author.avatarUrl, // Inclui o avatar do autor
+        name: authorName,
+        avatarUrl: authorAvatarUrl,
       },
       score: totalScore,
       commentsCount: post._count.comments,

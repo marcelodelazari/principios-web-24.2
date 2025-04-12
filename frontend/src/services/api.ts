@@ -8,6 +8,8 @@ import {
   AuthResponse,
   VoteResponse,
   VoteType,
+  Friendship,
+  FriendshipStatus,
 } from "../models";
 
 // Configure a URL base correta do backend
@@ -280,6 +282,56 @@ export const processGoogleLogin = async (
 export const checkGoogleRedirect = (): string | null => {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get("code");
+};
+
+// Amizades
+export const sendFriendRequest = async (
+  receiverId: number
+): Promise<Friendship> => {
+  const response = await api.post(`/friendship/request/${receiverId}`);
+  return response.data;
+};
+
+export const acceptFriendRequest = async (
+  requesterId: number
+): Promise<Friendship> => {
+  const response = await api.post(`/friendship/accept/${requesterId}`);
+  return response.data;
+};
+
+export const rejectFriendRequest = async (
+  requesterId: number
+): Promise<Friendship> => {
+  const response = await api.post(`/friendship/reject/${requesterId}`);
+  return response.data;
+};
+
+export const blockUser = async (blockedId: number): Promise<Friendship> => {
+  const response = await api.post(`/friendship/block/${blockedId}`);
+  return response.data;
+};
+
+export const cancelFriendRequest = async (
+  receiverId: number
+): Promise<void> => {
+  await api.delete(`/friendship/cancel/${receiverId}`);
+};
+
+export const getFriends = async (): Promise<Friendship[]> => {
+  const response = await api.get("/friendship/friends");
+  return response.data;
+};
+
+export const getPendingRequests = async (): Promise<Friendship[]> => {
+  const response = await api.get("/friendship/pending");
+  return response.data;
+};
+
+export const getFriendshipStatus = async (
+  otherUserId: number
+): Promise<FriendshipStatus | null> => {
+  const response = await api.get(`/friendship/status/${otherUserId}`);
+  return response.data.status;
 };
 
 export default api;

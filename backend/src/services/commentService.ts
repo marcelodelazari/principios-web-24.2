@@ -29,13 +29,17 @@ export class CommentService {
             null
           : null;
 
+      // Tratamento para autor nulo
+      const authorName = comment.author?.name || "Usuário deletado";
+      const authorAvatarUrl = comment.author?.avatarUrl || null;
+
       return {
         ...comment,
         id: comment.id.toString(),
         postId: comment.postId.toString(),
-        authorId: comment.authorId.toString(),
-        authorName: comment.author.name,
-        authorAvatarUrl: comment.author.avatarUrl, // Inclui o avatar do autor
+        authorId: comment.authorId?.toString() || "0",
+        authorName,
+        authorAvatarUrl,
         score,
         userVote,
         author: undefined,

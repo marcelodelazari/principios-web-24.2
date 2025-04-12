@@ -11,6 +11,26 @@ export interface User {
   createdAt: Date;
 }
 
+export enum FriendshipStatus {
+  pending = "pending",
+  accepted = "accepted",
+  blocked = "blocked",
+  declined = "declined",
+}
+
+export interface Friendship {
+  id: number;
+  status: FriendshipStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  otherUser: {
+    id: number;
+    name: string;
+    avatarUrl?: string;
+    bio?: string;
+  };
+}
+
 export interface Vote {
   voteType: "upvote" | "downvote";
   userId: number;

@@ -11,6 +11,7 @@ import {
 import ProfileDetails from "../../components/Profile/ProfileDetails";
 import ProfileEdit from "../../components/Profile/ProfileEdit";
 import ProfilePicture from "../../components/Profile/ProfilePicture";
+import FriendsList from "../../components/Profile/FriendsList";
 import {
   getCurrentUser,
   getUserProfile,
@@ -18,6 +19,7 @@ import {
 } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { User } from "../../models";
+import NavBar from "../../components/NavBar"; // Importa a NavBar
 
 const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -71,72 +73,82 @@ const ProfilePage: React.FC = () => {
   const isOwnProfile = loggedInUser?.id === user.id;
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        gap: 4,
-        mt: 4,
-        px: 2,
-      }}
-    >
-      {/* Foto do Perfil */}
+    <>
+      <NavBar /> {/* Garante que a NavBar esteja presente */}
       <Box
         sx={{
-          flex: { xs: "1 1 auto", md: "0 0 30%" },
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          flexDirection: { xs: "column", md: "row" },
+          gap: 4,
+          mt: 4,
+          px: 2,
         }}
       >
-        <Card sx={{ textAlign: "center", p: 2, width: "100%" }}>
-          <ProfilePicture
-            imageUrl={user.avatarUrl || "/default-avatar.png"}
-            onUpload={handleAvatarUpload}
-          />
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            {user.name}
-          </Typography>
-        </Card>
-      </Box>
-
-      {/* Informações do Perfil */}
-      <Box
-        sx={{
-          flex: "1 1 auto",
-        }}
-      >
-        <Card>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>
-              Informações do Perfil
+        {/* Foto do Perfil */}
+        <Box
+          sx={{
+            flex: { xs: "1 1 auto", md: "0 0 30%" },
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <Card sx={{ textAlign: "center", p: 2, width: "100%" }}>
+            <ProfilePicture
+              imageUrl={user.avatarUrl || "/default-avatar.png"}
+              onUpload={handleAvatarUpload}
+            />
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              {user.name}
             </Typography>
-            {isEditing ? (
-              <ProfileEdit user={user} onUpdate={handleUpdateUser} />
-            ) : (
-              <ProfileDetails user={user} />
-            )}
-            {isOwnProfile && !isEditing && (
-              <Button
-                variant="contained"
-                sx={{ mt: 2 }}
-                onClick={() => setIsEditing(true)}
-              >
-                Editar Perfil
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      </Box>
+          </Card>
+        </Box>
 
-      {/* Snackbar para feedback */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        message="Avatar atualizado com sucesso!"
-      />
-    </Box>
+        {/* Informações do Perfil */}
+        <Box
+          sx={{
+            flex: "1 1 auto",
+          }}
+        >
+          <Card>
+            <CardContent>
+              <Typography variant="h5" gutterBottom>
+                Informações do Perfil
+              </Typography>
+              {isEditing ? (
+                <ProfileEdit user={user} onUpdate={handleUpdateUser} />
+              ) : (
+                <ProfileDetails user={user} />
+              )}
+              {isOwnProfile && !isEditing && (
+                <Button
+                  variant="contained"
+                  sx={{ mt: 2 }}
+                  onClick={() => setIsEditing(true)}
+                >
+                  Editar Perfil
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Add FriendsList for the user's own profile */}
+        {isOwnProfile && (
+          <Box sx={{ flex: "1 1 auto" }}>
+            <FriendsList />
+          </Box>
+        )}
+
+        {/* Snackbar para feedback */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={3000}
+          onClose={() => setSnackbarOpen(false)}
+          message="Avatar atualizado com sucesso!"
+        />
+      </Box>
+    </>
   );
 };
 
