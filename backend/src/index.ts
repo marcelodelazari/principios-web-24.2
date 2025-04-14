@@ -20,7 +20,25 @@ SocketManager.initialize(server);
 const port = process.env.PORT || 3000;
 
 // Middlewares
-app.use(cors());
+const allowedOrigins = [
+  "https://marcelodelazari.com.br",
+  "https://www.marcelodelazari.com.br",
+  "http://localhost:3001",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(json());
 
 // Ajuste do caminho para o swagger.yaml
