@@ -10,6 +10,7 @@ import {
   VoteType,
   Friendship,
   FriendshipStatus,
+  Message,
 } from "../models";
 
 // Configure a URL base correta do backend
@@ -318,8 +319,23 @@ export const cancelFriendRequest = async (
 };
 
 export const getFriends = async (): Promise<Friendship[]> => {
-  const response = await api.get("/friendship/friends");
-  return response.data;
+  try {
+    const response = await api.get<Friendship[]>("/friendship/friends");
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar amigos:", error);
+    throw error;
+  }
+};
+
+export const getFriendsWithStatus = async (): Promise<Friendship[]> => {
+  try {
+    const response = await api.get<Friendship[]>("/friendship/statuses");
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao buscar amigos com status:", error);
+    throw error;
+  }
 };
 
 export const getPendingRequests = async (): Promise<Friendship[]> => {
@@ -330,8 +346,54 @@ export const getPendingRequests = async (): Promise<Friendship[]> => {
 export const getFriendshipStatus = async (
   otherUserId: number
 ): Promise<FriendshipStatus | null> => {
-  const response = await api.get(`/friendship/status/${otherUserId}`);
-  return response.data.status;
+  try {
+    const response = await api.get<{ status: FriendshipStatus | null }>(
+      `/friendship/status/${otherUserId}`
+    );
+    return response.data.status;
+  } catch (error) {
+    console.error(
+      `Erro ao buscar status de amizade com ${otherUserId}:`,
+      error
+    );
+    return null;
+  }
 };
 
+// Mensagens
+export const getConversation = async (friendId: number): Promise<Message[]> => {
+  try {
+    const response = await api.get<Message[]>(`/messages/${friendId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Erro ao buscar conversa com o amigo ${friendId}:`, error);
+    throw error;
+  }
+};
+
+export const sendMessage = async (
+  receiverId: number,
+  content: string
+): Promise<Message> => {
+  try {
+    const response = await api.post<Message>("/messages", {
+      receiverId,
+      content,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Erro ao enviar mensagem para o amigo ${receiverId}:`, error);
+    throw error;
+  }
+};
+
+export const getUnreadMessagesCount = async (): Promise<number> => {
+  try {
+    const response = await api.get<{ count: number }>("/messages/unread/count");
+    return response.data.count;
+  } catch (error) {
+    console.error("Erro ao buscar contagem de mensagens não lidas:", error);
+    throw error;
+  }
+};
 export default api;

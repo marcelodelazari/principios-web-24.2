@@ -13,6 +13,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { useAuth } from "../contexts/AuthContext";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import UserAvatar from "./UserAvatar"; // Importa o componente reutilizável
+import { ChatButton } from "./ChatButton";
 
 export default function NavBar() {
   const { user, logout } = useAuth();
@@ -68,6 +69,10 @@ export default function NavBar() {
           )}
           {user ? (
             <>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <ChatButton />
+                {/* ... outros botões ... */}
+              </Box>
               <IconButton
                 component={Link}
                 to={`/profile/${user.id}`} // Redireciona para o perfil do usuário logado

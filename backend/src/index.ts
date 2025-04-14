@@ -2,13 +2,21 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { json } from "body-parser";
 import router from "./routes";
+import messageRouter from "./routes/message";
 import swaggerUi from "swagger-ui-express";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import path from "path";
+import http from "http";
+import SocketManager from "./lib/socketManager";
 
 console.log("=== SERVIDOR INICIANDO ===");
 const app = express();
+const server = http.createServer(app);
+
+// Inicializar Socket.IO
+SocketManager.initialize(server);
+
 const port = process.env.PORT || 3000;
 
 // Middlewares
@@ -27,7 +35,7 @@ if (!fs.existsSync(swaggerPath)) {
 }
 
 // Usa as rotas agrupadas
-app.use(router);
+app.use("/", router);
 
 // Rota de teste
 app.get("/test", (req: Request, res: Response) => {
@@ -51,7 +59,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Inicia o servidor somente se não estiver no ambiente de teste
 if (process.env.NODE_ENV !== "test") {
-  app.listen(port, () => {
+  server.listen(port, () => {
     console.log(`🔥 Servidor rodando na porta ${port}`);
   });
 }

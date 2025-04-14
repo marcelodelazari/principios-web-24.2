@@ -53,4 +53,17 @@ friendshipRouter.get(
   friendshipController.getFriendshipStatus
 );
 
+// Ver status de amizade com todos os amigos
+friendshipRouter.get("/friendship/statuses", async (req, res, next) => {
+  try {
+    const userId = req.userId!;
+    const friendsWithStatus = await friendshipController.getFriendsWithStatus(
+      userId
+    );
+    res.json(friendsWithStatus);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default friendshipRouter;

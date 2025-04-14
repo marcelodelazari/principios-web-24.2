@@ -10,6 +10,7 @@ import { colors } from "./theme/colors";
 import { AuthProvider } from "./contexts/AuthContext";
 import { PostProvider } from "./contexts/PostContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { ChatProvider } from "./contexts/ChatContext";
 
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
@@ -18,7 +19,8 @@ import PostDetails from "./pages/PostDetails";
 import CreatePost from "./pages/CreatePost";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProfilePage from "./pages/Profile";
-import GoogleCallback from "./pages/GoogleCallback"; // Importa a nova página de callback
+import GoogleCallback from "./pages/GoogleCallback";
+import { ChatWindows } from "./components/ChatWindows";
 
 // Criação do tema personalizado
 const theme = createTheme(
@@ -74,27 +76,30 @@ function App() {
       <CssBaseline />
       <AuthProvider>
         <NotificationProvider>
-          <PostProvider>
-            <Router>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/posts/:postId" element={<PostDetails />} />
-                <Route path="/google/callback" element={<GoogleCallback />} />
-                <Route
-                  path="/create-post"
-                  element={
-                    <ProtectedRoute>
-                      <CreatePost />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Rota para o perfil do usuário logado ou de outros usuários */}
-                <Route path="/profile/:userId" element={<ProfilePage />} />
-              </Routes>
-            </Router>
-          </PostProvider>
+          <ChatProvider>
+            <PostProvider>
+              <Router>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/posts/:postId" element={<PostDetails />} />
+                  <Route path="/google/callback" element={<GoogleCallback />} />
+                  <Route
+                    path="/create-post"
+                    element={
+                      <ProtectedRoute>
+                        <CreatePost />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Rota para o perfil do usuário logado ou de outros usuários */}
+                  <Route path="/profile/:userId" element={<ProfilePage />} />
+                </Routes>
+                <ChatWindows />
+              </Router>
+            </PostProvider>
+          </ChatProvider>
         </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>

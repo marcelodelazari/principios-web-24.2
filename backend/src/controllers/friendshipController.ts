@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { FriendshipService } from "../services/friendshipService";
+import SocketManager from "../lib/socketManager";
 
 export class FriendshipController {
   private friendshipService: FriendshipService;
@@ -96,6 +97,26 @@ export class FriendshipController {
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
+  };
+
+  getFriendsWithStatus = async (userId: number) => {
+    const friends = await this.friendshipService.getFriends(userId);
+    const io = SocketManager.getInstance();
+    const connectedSockets = await io.sockets.adapter.sids;
+    const onlineUsers = new Set();
+
+    for (const [socketId, roomSet] of connectedSockets) {
+      for (const room of roomSet) {
+        if (room.startsWith("user_")) {
+          onlineUsers.add(parseInt(room.split("_")[1]));
+        }
+      }
+    }
+
+    return friends.map((friend) => ({
+      ...friend,
+      isOnline: onlineUsers.has(friend.otherUser.id),
+    }));
   };
 
   getPendingRequests = async (req: Request, res: Response) => {

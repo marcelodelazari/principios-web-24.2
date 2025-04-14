@@ -29,6 +29,7 @@ export interface Friendship {
     avatarUrl?: string;
     bio?: string;
   };
+  isOnline?: boolean; // Adicionar esta propriedade
 }
 
 export interface Vote {
@@ -85,4 +86,20 @@ export type VoteType = "upvote" | "downvote" | null;
 export interface VoteResponse {
   newScore: number;
   userVote: VoteType;
+}
+
+export interface Message {
+  id: number;
+  content: string;
+  createdAt: string;
+  senderId: number;
+  receiverId: number;
+  read: boolean;
+  sender: {
+    id: number;
+    name: string;
+    avatarUrl?: string;
+  };
+  status?: "sending" | "sent" | "error";
+  tempId?: string; // ID temporário para tracking
 }
