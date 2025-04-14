@@ -5,11 +5,19 @@ import jwt from "jsonwebtoken";
 export const configureSocket = (server: HttpServer) => {
   const io = new Server(server, {
     cors: {
-      origin: [
-        "https://marcelodelazari.com.br",
-        "https://www.marcelodelazari.com.br",
-        "http://localhost:3001",
-      ],
+      origin: (origin, callback) => {
+        const allowedOrigins = [
+          "https://marcelodelazari.com.br",
+          "https://www.marcelodelazari.com.br",
+          "http://localhost:3001",
+        ];
+
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       methods: ["GET", "POST"],
     },
   });
