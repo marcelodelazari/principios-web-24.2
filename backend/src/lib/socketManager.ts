@@ -10,8 +10,21 @@ class SocketManager {
     if (!this.instance) {
       this.instance = new SocketServer(server, {
         cors: {
-          origin: process.env.FRONTEND_URL || "http://localhost:3001",
+          origin: (origin, callback) => {
+            const allowedOrigins = [
+              "https://marcelodelazari.com.br",
+              "https://www.marcelodelazari.com.br",
+              "http://localhost:3001",
+            ];
+
+            if (!origin || allowedOrigins.includes(origin)) {
+              callback(null, true);
+            } else {
+              callback(new Error("Not allowed by CORS"));
+            }
+          },
           methods: ["GET", "POST"],
+          credentials: true,
         },
       });
 
