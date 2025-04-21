@@ -2,7 +2,7 @@
 
 ![Social Media Prototype Screenshot](https://i.ibb.co/chfQXsqb/Socialmedia.png)
 
-This repository contains a **social media prototype project** developed as a **learning exercise** to understand the fundamentals of web application development.
+This repository contains a **social media prototype project** with an integrated real-time chat feature and a friends list in real time powered by sockets (SOCKETS.IO).
 
 It was built using **React** for the frontend and **Node.js** for the backend. **It also features integration with Google, allowing users to create accounts and log in using their Google accounts.**
 
