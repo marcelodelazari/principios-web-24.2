@@ -1,6 +1,6 @@
 # principios-web-24.2
 
-![Social Media Prototype Screenshot](https://i.ibb.co/nMBpngDt/socialmedia.png)
+![Social Media Prototype Screenshot](https://i.ibb.co/whW7zRsF/Socialmedia.png)
 
 This repository contains a **social media prototype project** developed as a **learning exercise** to understand the fundamentals of web application development.
 
