@@ -4,7 +4,7 @@
 
 This repository contains a **social media prototype project** developed as a **learning exercise** to understand the fundamentals of web application development.
 
-It was built using **React** for the frontend and **Node.js** for the backend.
+It was built using **React** for the frontend and **Node.js** for the backend. **It also features integration with Google, allowing users to create accounts and log in using their Google accounts.**
 
 As a learning project, I plan to make several improvements in the future, including:
 * Transitioning towards a **microservices** architecture.
